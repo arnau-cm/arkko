@@ -13,7 +13,7 @@ se filtren secretos.
 |---|---|
 | Código fuente | Este repositorio |
 | Descarga de la app (despliegue) | [Releases](../../releases): versión de trabajo (WIP) para Windows; cómo instalarla, en [Instalación](#instalación) |
-| Presentación (slides) | Pendiente |
+| Presentación (slides) | [Google Slides](https://docs.google.com/presentation/d/1vMf7AI7-YzSqpy8-Zs3VqvmacPGi-ihw7Z5mzTKq0w8/edit?usp=sharing) |
 | Vídeo de explicación | Pendiente |
 | Usuario y contraseña de prueba | No aplica: es una app de escritorio local, sin login |
 
