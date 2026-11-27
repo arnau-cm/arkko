@@ -1,0 +1,25 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Arkko.Desktop"
+        x:Class="Arkko.Desktop.TerminalLayoutWindow"
+        Title="Personalizar terminal" Icon="{DynamicResource AppWindowIcon}" Width="792" SizeToContent="Height" CanResize="False" Topmost="True"
+        WindowDecorations="None" TransparencyLevelHint="Transparent" Background="Transparent" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <!-- Margen para la sombra: la ventana es transparente y la tarjeta flota dentro -->
+    <Border Margin="16" CornerRadius="{DynamicResource RadiusL}" Background="{DynamicResource GlassBase}" BorderBrush="{DynamicResource GlassEdge}" BorderThickness="1"
+            BoxShadow="0 4 24 0 #59000000">
+        <Border CornerRadius="{DynamicResource RadiusL}" Background="{DynamicResource Sheen}">
+            <DockPanel>
+                <!-- BARRA DE TÍTULO -->
+                <Grid DockPanel.Dock="Top" Height="44" Background="Transparent" PointerPressed="TitleBar_PointerPressed">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Image Source="{DynamicResource AppLogo}" Width="18" Height="18" Margin="0,0,8,0" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                        <TextBlock Text="Personalizar terminal" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button Theme="{StaticResource CloseButton}" HorizontalAlignment="Right" Margin="0,0,12,0" Click="Close_Click" ToolTip.Tip="Cerrar"
+                            Content="&#xE8BB;" FontFamily="{StaticResource IconFont}" />
+                </Grid>
+                <local:TerminalLayoutView Name="Editor" Margin="16,0,16,16" />
+            </DockPanel>
+        </Border>
+    </Border>
+</Window>

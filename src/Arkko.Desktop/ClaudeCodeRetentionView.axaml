@@ -1,0 +1,33 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.ClaudeCodeRetentionView"
+             x:DataType="local:ClaudeCodeModel">
+    <!-- TRANSCRIPTS DE CLAUDE CODE: se guardan en su settings.json y los borra Claude Code -->
+    <Border Classes="lens" Padding="16,12">
+        <StackPanel>
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding SizeText}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                <local:ClaudeLogo Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock Text="Claude Code" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
+            </DockPanel>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource FgMuted}" Classes="body" Margin="0,8,0,8"
+                       Text="Claude Code guarda en ~/.claude, en texto plano, todo lo que pasa por cada sesión: tus mensajes, los ficheros que lee y la salida de sus comandos. Cuanto menos tiempo se guarde, menos queda expuesto, pero una sesión borrada ya no se puede retomar. Los borra el propio Claude Code en su limpieza automática." />
+            <ItemsControl ItemsSource="{Binding Categories}" ItemTemplate="{StaticResource RetentionRow}" />
+            <TextBlock Text="{Binding Note}" IsVisible="{Binding NoteVisible}" Foreground="{DynamicResource FgFaint}"
+                       Classes="caption" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+            <!-- ACCIONES: los plazos se guardan solos al elegirlos; esto solo abre su carpeta -->
+            <DockPanel Margin="0,16,0,0">
+                <Button DockPanel.Dock="Left" Theme="{StaticResource ChipButton}" Click="OpenFolder_Click"
+                        ToolTip.Tip="Abre la carpeta donde Claude Code guarda sus sesiones y su configuración">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE838;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Abrir carpeta" />
+                    </StackPanel>
+                </Button>
+                <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource FgFaint}" Classes="label" VerticalAlignment="Center" Margin="12,0" />
+            </DockPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <!-- Solo lo propio: ni scripts, ni estilos, ni conexiones de fuera -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Relojes</title>
+    <link rel="stylesheet" href="reloj.css">
+    <link rel="stylesheet" href="relojes.css">
+</head>
+<body>
+    <!-- RELOJES: un reloj por sesión abierta, todos con la misma hora; la cuadrícula se ajusta para que quepan todos -->
+    <main class="ck-page">
+        <p class="ck-head" id="head"></p>
+        <div class="ck-grid" id="grid"></div>
+        <p class="ck-empty" id="empty" hidden>No hay sesiones abiertas. Cuando abras una con Claude Code, su reloj aparece aquí.</p>
+    </main>
+    <script src="reloj.js"></script>
+    <script src="relojes.js"></script>
+</body>
+</html>

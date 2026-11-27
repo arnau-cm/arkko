@@ -1,0 +1,133 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.DiaryView"
+             x:DataType="local:DiaryModel">
+    <UserControl.Styles>
+        <Style Selector="Grid.spinning">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <!-- BLOQUE: al pasar, borde más marcado; elegido, del acento -->
+        <Style Selector="Border.block">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+        <Style Selector="Border.block:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource FgMuted}" />
+        </Style>
+        <Style Selector="Border.block.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+        <!-- DÍA DEL MES Y DEL CALENDARIO DESPLEGABLE: al pasar, el borde se marca -->
+        <Style Selector="Border.monthDay:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource FgMuted}" />
+        </Style>
+        <Style Selector="Border.pick">
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.pick:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+        </Style>
+        <Style Selector="Border.weekRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- BARRA: moverse por el calendario, el rango (con su calendario) y la vista; a la derecha, el horario y copiar el parte -->
+        <DockPanel Margin="0,0,0,14">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <ToggleButton Name="WorkHoursChip" Theme="{StaticResource ChipToggle}" IsChecked="{Binding WorkHoursOnly}" IsVisible="{Binding GridVisible}"
+                              Margin="0,2,10,2">
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                        <TextBlock Text="&#xE823;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,1,6,0" />
+                        <TextBlock Text="Horario laboral" VerticalAlignment="Center" />
+                    </StackPanel>
+                </ToggleButton>
+                <TextBlock Text="{Binding CopiedText}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Name="CopyButton" Theme="{StaticResource ChipButton}" Click="Copy_Click" IsEnabled="{Binding CanCopy}">
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                        <TextBlock Text="&#xE8C8;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,1,6,0" />
+                        <TextBlock Text="Copiar parte" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Name="TodayButton" Theme="{StaticResource ChipButton}" Click="Today_Click" Content="Hoy" Margin="0,2,6,2" />
+                <Button Name="PreviousButton" Theme="{StaticResource ChipButton}" Click="Previous_Click" Margin="0,2,2,2">
+                    <TextBlock Text="&#xE76B;" Classes="icon" FontSize="10" Margin="0,2" />
+                </Button>
+                <Button Name="NextButton" Theme="{StaticResource ChipButton}" Click="Next_Click" Margin="0,2,8,2">
+                    <TextBlock Text="&#xE76C;" Classes="icon" FontSize="10" Margin="0,2" />
+                </Button>
+                <Button Name="RangeButton" Theme="{StaticResource ChipButton}" Click="Range_Click" Margin="0,2,16,2" Foreground="{DynamicResource Fg}">
+                    <StackPanel Orientation="Horizontal" Margin="2,1">
+                        <TextBlock Text="&#xE787;" Classes="icon" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource FgMuted}" Margin="0,1,9,0" />
+                        <TextBlock Text="{Binding RangeText}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock Text="&#xE70D;" Classes="icon" FontSize="9" VerticalAlignment="Center" Foreground="{DynamicResource FgMuted}" Margin="9,2,0,0" />
+                    </StackPanel>
+                </Button>
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="DiaryMode" Content="Día" IsChecked="{Binding IsDay}" Margin="0,2,6,2" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="DiaryMode" Content="Semana laboral" IsChecked="{Binding IsWorkWeek}" Margin="0,2,6,2" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="DiaryMode" Content="Semana" IsChecked="{Binding IsWeek}" Margin="0,2,6,2" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="DiaryMode" Content="Mes" IsChecked="{Binding IsMonth}" Margin="0,2,6,2" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="DiaryMode" Content="Agenda" IsChecked="{Binding IsAgenda}" Margin="0,2,6,2" />
+            </WrapPanel>
+        </DockPanel>
+
+        <!-- CALENDARIO DESPLEGABLE: un día, una semana o un mes, según la vista; lo llena el código -->
+        <Popup Name="Picker" PlacementTarget="{Binding #RangeButton}" Placement="BottomEdgeAlignedLeft" IsLightDismissEnabled="True">
+            <Border Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}" BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusM}" Padding="12" Margin="0,2,10,10" BoxShadow="0 3 14 0 #47000000">
+                <StackPanel Name="PickerBody" />
+            </Border>
+        </Popup>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+            <Border Background="{DynamicResource TaskLane}" CornerRadius="{DynamicResource RadiusM}" Padding="0,8,8,0" ClipToBounds="True">
+                <Grid RowDefinitions="Auto,*">
+                    <!-- POR HORAS: cabecera de cada día y, debajo, las horas con sus bloques -->
+                    <Grid Name="DayHeaders" Margin="0,0,0,6" IsVisible="{Binding GridVisible}" />
+                    <ScrollViewer Name="Body" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                  IsVisible="{Binding GridVisible}">
+                        <Grid Name="HourGrid" Margin="0,8,0,12" />
+                    </ScrollViewer>
+                    <!-- MES: de lunes a domingo; el fondo de cada día, más intenso cuanto más se trabajó -->
+                    <Grid Name="MonthGrid" Grid.RowSpan="2" Margin="8,0,0,8" IsVisible="{Binding IsMonth}" />
+                    <!-- AGENDA: los días del mes con algo, del más reciente al más antiguo, a todo el ancho -->
+                    <ScrollViewer Name="AgendaScroll" Grid.RowSpan="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsAgenda}"
+                                  ScrollChanged="Agenda_ScrollChanged">
+                        <StackPanel Name="AgendaList" Margin="16,8,8,12" />
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" IsVisible="{Binding Loading}">
+                        <Grid Classes.spinning="{Binding Loading}" Width="34" Height="34" HorizontalAlignment="Center">
+                            <Ellipse Stroke="{DynamicResource TrackEdge}" StrokeThickness="3" />
+                            <Path Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeLineCap="Round" Data="M 17,1.5 A 15.5,15.5 0 0 1 32.5,17" />
+                        </Grid>
+                        <TextBlock Text="Leyendo los días…" Margin="0,14,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Text="Sin sesiones en estos días" IsVisible="{Binding NothingVisible}" Foreground="{DynamicResource FgMuted}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- A LA DERECHA: la ficha del bloque elegido o, en la vista Día, el parte del día; lo pinta el código, con su propio scroll -->
+            <Border Name="SideHost" Grid.Column="1" Width="440" Margin="14,0,0,0" IsVisible="False" />
+        </Grid>
+
+        <!-- LEYENDA: qué es cada marca de la vista -->
+        <WrapPanel Name="Legend" Grid.Row="2" Orientation="Horizontal" Margin="4,10,0,0" />
+    </Grid>
+</UserControl>

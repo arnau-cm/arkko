@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Arkko">
+<defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="3" result="fine"/>
+    <feColorMatrix in="fine" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.6 1.2" result="raw"/>
+    <feColorMatrix in="raw" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0" result="pores"/>
+    <feComposite in="pores" in2="SourceGraphic" operator="in" result="pores-in"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pores-in"/></feMerge>
+  </filter>
+  <filter id="halo" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="3.5"/></filter>
+</defs>
+<rect x="7" y="8" width="114" height="114" rx="26" fill="#8C8880" stroke="#A6A29A" stroke-width="1.5"/>
+<rect x="16" y="12" width="96" height="92" rx="19" fill="#C8C4BC" filter="url(#grain)"/><g transform="translate(60 58) scale(0.6) translate(-63 -64)">
+  <path d="M53.7 27.0 Q38.3 61.3 27.5 97.8 L28.5 98.2 Q49.7 66.7 66.3 33.0 Z" fill="#0B0B0C"/>
+  <path d="M53.0 30.0 Q53.0 64.0 59.0 98.0 L61.0 98.0 Q67.0 64.0 67.0 30.0 Z" fill="#0B0B0C"/>
+  <path d="M58.2 72.6 Q77.0 86.6 97.7 98.4 L98.3 97.6 Q83.0 79.4 65.8 63.4 Z" fill="#0B0B0C"/>
+  <path d="M66.2 72.2 Q83.4 53.4 98.4 32.4 L97.6 31.6 Q76.6 46.6 57.8 63.8 Z" fill="#0B0B0C"/></g><rect x="88" y="22" width="14" height="5" rx="2.5" fill="#3FB950"/>
+</svg>

@@ -1,0 +1,457 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.TokensView"
+             x:DataType="local:SecretPlanModel">
+    <UserControl.Resources>
+        <!-- CASILLA DE UN PASO: verde y con su marca al hacerlo -->
+        <ControlTheme x:Key="StepBox" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="Box" Width="16" Height="16" CornerRadius="4" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1"
+                            Background="{DynamicResource TrackFill}">
+                        <TextBlock Name="Mark" Text="&#xE73E;" Classes="icon" FontSize="10" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="False" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#Box">
+                <Setter Property="BorderBrush" Value="{DynamicResource FgFaint}" />
+            </Style>
+            <Style Selector="^:checked /template/ Border#Box">
+                <Setter Property="Background" Value="{x:Static local:SecurityModel.DoneBrush}" />
+                <Setter Property="BorderBrush" Value="{x:Static local:SecurityModel.DoneBrush}" />
+            </Style>
+            <Style Selector="^:checked /template/ TextBlock#Mark">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+        </ControlTheme>
+
+        <!-- UN PASO: su casilla cuando toca hacerlo, su número y su texto con formato; hecho, más apagado -->
+        <DataTemplate x:Key="StepRow" x:DataType="local:PlanStep">
+            <DockPanel Margin="0,0,0,6">
+                <ToggleButton DockPanel.Dock="Left" Theme="{StaticResource StepBox}" IsChecked="{Binding Done}" IsVisible="{Binding BoxVisible}"
+                              VerticalAlignment="Top" Margin="0,1,10,0" ToolTip.Tip="Márcalo cuando lo hayas hecho" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Number}" Foreground="{DynamicResource FgMuted}" Margin="0,0,6,0" />
+                <TextBlock TextWrapping="Wrap" local:MarkdownLine.Text="{Binding Text}" Opacity="{Binding TextOpacity}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- CADA CUÁNTO CAMBIARLO: botones de días fijos, «Nunca» y «Otro» con su número de días -->
+        <DataTemplate x:Key="FrequencyChips" x:DataType="local:FrequencyPicker">
+            <WrapPanel>
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsMonth}" Content="1 mes" Margin="0,0,6,6" />
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsQuarter}" Content="3 meses" Margin="0,0,6,6" />
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsHalf}" Content="6 meses" Margin="0,0,6,6" />
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsYear}" Content="1 año" Margin="0,0,6,6" />
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsNever}" Content="Nunca" Margin="0,0,6,6"
+                             ToolTip.Tip="Sin recordatorio: queda apuntado, pero la app no te avisa" />
+                <RadioButton Theme="{StaticResource ChipRadio}" IsChecked="{Binding IsOther}" Content="Otro…" Margin="0,0,6,6" />
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding OtherVisible}" Margin="0,0,0,6">
+                    <TextBox Classes="planField" Width="60" Margin="0" Text="{Binding OtherDaysText}" />
+                    <TextBlock Text="días" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                </StackPanel>
+            </WrapPanel>
+        </DataTemplate>
+
+        <!-- Ha salido en Seguridad: por qué, y el camino hasta allí -->
+        <DataTemplate x:Key="LeakBox" x:DataType="local:CardItem">
+            <Border IsVisible="{Binding LeakVisible}" Background="{x:Static local:SecurityModel.PendingFill}" CornerRadius="{DynamicResource RadiusS}"
+                    Margin="0,10,0,0" Padding="12,8">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="ShowLeak_Click" VerticalAlignment="Center" Margin="10,0,0,0"
+                            Content="Ver en Seguridad" ToolTip.Tip="Abre el hallazgo en Seguridad, con dónde y cuándo apareció" />
+                    <TextBlock Text="{Binding LeakLine}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- FILA DE UN RECORDATORIO: punto de su color, qué hay que hacer y cuándo -->
+        <DataTemplate x:Key="ReminderRow" x:DataType="local:CardItem">
+            <Grid ColumnDefinitions="Auto,*">
+                <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" VerticalAlignment="Top" Margin="0,5,10,0" />
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding ReminderTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding StateText}" Classes="label" Foreground="{DynamicResource FgMuted}"
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- FILA DE UN TOKEN: punto de su color, su nombre y cada cuánto se cambia -->
+        <DataTemplate x:Key="CardRow" x:DataType="local:CardItem">
+            <Grid ColumnDefinitions="Auto,*">
+                <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" VerticalAlignment="Top" Margin="0,5,10,0" />
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding FrequencyLine}" Classes="label" Foreground="{DynamicResource FgMuted}"
+                               TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- UN RECORDATORIO: lo de esta vez (pasos, cambiado, más tarde); lo demás viene del token y se cambia allí -->
+        <DataTemplate x:Key="ReminderView" x:DataType="local:CardItem">
+            <StackPanel>
+                <TextBlock Text="{Binding ReminderTitle}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Classes="ownColor" Text="{Binding StateText}" Foreground="{Binding StateBrush}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding FrequencyLine}" Classes="label" Foreground="{DynamicResource FgFaint}" Margin="0,2,0,0" />
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeakBox}" Focusable="False" />
+                <WrapPanel Margin="0,12,0,0">
+                    <Button Theme="{StaticResource ActionDone}" Click="PlanRotated_Click"
+                            ToolTip.Tip="Ya lo has cambiado en su servicio: se apunta hoy como último cambio y el recordatorio pasa a la siguiente fecha">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE73E;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Ya lo he cambiado" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ActionButton}" Click="PlanMove_Click" IsVisible="{Binding MoveVisible}"
+                            ToolTip.Tip="Si ese día no vas a estar: muévelo antes o después, solo esta vez">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE787;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding MoveText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ActionButton}" Click="PlanShowCard_Click" ToolTip.Tip="Abre los datos del token: nombre, cada cuánto, pasos…">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE70F;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Editar el token" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <StackPanel IsVisible="{Binding MoveVisible}">
+                    <TextBlock Classes="menuLabel" Text="ESTA VEZ, RECUÉRDAMELO EL" Margin="2,16,0,6" />
+                    <local:DateField Date="{Binding RemindDay}" AllowEmpty="False" />
+                    <TextBlock Classes="planHint" Text="Solo para esta vez: al pulsar «Ya lo he cambiado», el siguiente se cuenta normal desde ese día." />
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding RotateNowIfVisible}">
+                    <TextBlock Classes="menuLabel" Text="CÁMBIALO YA SI" Margin="2,16,0,6" />
+                    <TextBlock local:MarkdownLine.Text="{Binding RotateNowIf}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel IsVisible="{Binding WhereToChangeVisible}">
+                    <TextBlock Classes="menuLabel" Text="DÓNDE SE CAMBIA" Margin="2,16,0,6" />
+                    <TextBlock local:MarkdownLine.Text="{Binding WhereToChange}" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <TextBlock Classes="menuLabel" Text="{Binding StepsHeader}" Margin="2,16,0,8" />
+                <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource StepRow}" IsVisible="{Binding StepsVisible}" />
+                <TextBlock IsVisible="{Binding NoStepsVisible}" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap"
+                           Text="Este token aún no tiene pasos. Añádelos en «Editar el token», en «Cómo se cambia»: saldrán aquí como casillas para ir marcando." />
+
+                <Border BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,0" Margin="0,20,0,0" Padding="0,10,0,0">
+                    <TextBlock Classes="label" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap"
+                               Text="Este recordatorio lo crea la app a partir del token. El nombre, cada cuánto se cambia y los pasos se editan en el token." />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- UN TOKEN: sus datos, que se guardan solos, y su recordatorio -->
+        <DataTemplate x:Key="CardEditor" x:DataType="local:CardItem">
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Classes="ownColor" Text="{Binding ReminderLine}" Foreground="{Binding StateBrush}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeakBox}" Focusable="False" />
+                <WrapPanel Margin="0,12,0,0">
+                    <Button Theme="{StaticResource ActionButton}" Click="PlanShowReminder_Click" IsVisible="{Binding ReminderVisible}"
+                            ToolTip.Tip="Abre su recordatorio, con los pasos y «Ya lo he cambiado»">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE823;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Ver su recordatorio" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ActionButton}" Click="PlanDeleteCard_Click" Foreground="{DynamicResource Danger}"
+                            ToolTip.Tip="Lo quita de la lista con su recordatorio; el token de verdad no se toca">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74D;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Eliminar" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <TextBlock Classes="menuLabel" Text="DATOS DEL TOKEN" Margin="2,12,0,10" />
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                    <TextBlock Text="Nombre" Classes="planLabel" />
+                    <TextBox Grid.Column="1" Classes="planField" Text="{Binding Name}" />
+                    <TextBlock Grid.Row="1" Text="Para qué sirve" Classes="planLabel" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Classes="planField" Text="{Binding Use}" />
+                    <TextBlock Grid.Row="2" Text="Cada cuánto cambiarlo" Classes="planLabel" />
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,4">
+                        <ContentControl Content="{Binding Frequency}" ContentTemplate="{StaticResource FrequencyChips}" Focusable="False" />
+                        <TextBlock Classes="planHint" Margin="0,0,0,8" Text="Con esto la app crea su recordatorio. Te avisa una semana antes (en ámbar) y el día que toca (en rojo)." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="3" Text="Creado el" Classes="planLabel" />
+                    <local:DateField Grid.Row="3" Grid.Column="1" Date="{Binding CreatedDay}" AllowEmpty="False" />
+                    <TextBlock Grid.Row="4" Text="Último cambio" Classes="planLabel" />
+                    <StackPanel Grid.Row="4" Grid.Column="1">
+                        <local:DateField Date="{Binding LastRotatedDay}" EmptyText="Nunca" />
+                        <TextBlock Classes="planHint" Text="Se pone sola al pulsar «Ya lo he cambiado» en su recordatorio. El siguiente se cuenta desde aquí o, si nunca se ha cambiado, desde la creación." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="5" Text="Dónde se cambia" Classes="planLabel" />
+                    <StackPanel Grid.Row="5" Grid.Column="1">
+                        <TextBox Classes="planField" Text="{Binding WhereToChange}" />
+                        <TextBlock Classes="planHint" Text="La web o el menú donde se crea uno nuevo; puede ser un enlace, también http de un servidor interno." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="6" Text="Dónde se guarda" Classes="planLabel" />
+                    <StackPanel Grid.Row="6" Grid.Column="1">
+                        <TextBox Classes="planField" Text="{Binding WhereStored}" />
+                        <TextBlock Classes="planHint" Text="Dónde está su valor: una variable de usuario, un gestor de contraseñas… El valor nunca se guarda aquí." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="7" Text="Variable de entorno" Classes="planLabel" />
+                    <StackPanel Grid.Row="7" Grid.Column="1">
+                        <TextBox Classes="planField" Text="{Binding EnvVar}" />
+                        <TextBlock Classes="planHint" Text="Opcional: su nombre, como NOMBRE_DEL_TOKEN. La app lee su valor solo para reconocerlo en Seguridad; no lo guarda ni lo enseña." />
+                        <TextBlock Text="{Binding RecognizeLine}" Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,-2,0,8" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="8" Text="Permisos" Classes="planLabel" />
+                    <TextBox Grid.Row="8" Grid.Column="1" Classes="planField" Text="{Binding Permissions}" />
+                    <TextBlock Grid.Row="9" Text="Cámbialo ya si" Classes="planLabel" />
+                    <StackPanel Grid.Row="9" Grid.Column="1">
+                        <TextBox Classes="planField planArea" Text="{Binding RotateNowIf}" />
+                        <TextBlock Classes="planHint" Text="Cuándo no esperar al recordatorio: si sale en Seguridad, si alguien deja el equipo…" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="10" Text="Cómo se cambia" Classes="planLabel" />
+                    <StackPanel Grid.Row="10" Grid.Column="1">
+                        <TextBox Classes="planField planArea" MinHeight="90" Text="{Binding StepsText}" />
+                        <TextBlock Classes="planHint" Text="Un paso por línea. Admite **negrita**, `código` y enlaces (http o https), también como [texto](https://…). En el recordatorio salen como casillas para ir marcando." />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- NUEVO TOKEN: cuatro preguntas y la variable, opcional; lo demás se añade después en el token -->
+        <DataTemplate x:Key="NewTokenForm" x:DataType="local:NewTokenDraft">
+            <StackPanel>
+                <TextBlock Text="Nuevo token" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" Margin="0,6,0,16"
+                           Text="Al crearlo, la app crea sola su recordatorio. El resto (dónde se cambia, dónde se guarda, los pasos) lo añades después, cuando quieras." />
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                    <TextBlock Text="¿Cómo se llama?" Classes="planLabel" />
+                    <StackPanel Grid.Column="1">
+                        <TextBox Classes="planField" Text="{Binding Name}" />
+                        <TextBlock Classes="planHint" Text="Por ejemplo, el nombre de su variable: NOMBRE_DEL_TOKEN." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Text="¿Para qué sirve?" Classes="planLabel" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Classes="planField" Text="{Binding Use}" />
+                    <TextBlock Grid.Row="2" Text="¿Cuándo lo creaste?" Classes="planLabel" />
+                    <local:DateField Grid.Row="2" Grid.Column="1" Date="{Binding CreatedDay}" AllowEmpty="False" />
+                    <TextBlock Grid.Row="3" Text="¿Cada cuánto cambiarlo?" Classes="planLabel" />
+                    <StackPanel Grid.Row="3" Grid.Column="1">
+                        <ContentControl Content="{Binding Frequency}" ContentTemplate="{StaticResource FrequencyChips}" Focusable="False" />
+                        <TextBlock Classes="planHint" Margin="0,0,0,8" Text="La app te avisará una semana antes y el día que toque. «Nunca» lo deja apuntado sin recordatorio." />
+                    </StackPanel>
+                    <TextBlock Grid.Row="4" Text="¿En qué variable vive?" Classes="planLabel" />
+                    <StackPanel Grid.Row="4" Grid.Column="1">
+                        <TextBox Classes="planField" Text="{Binding EnvVar}" />
+                        <TextBlock Classes="planHint" Text="Opcional. Si vive en una variable de entorno, su nombre: así la app te avisa sola si sale en Seguridad. Su valor no se guarda." />
+                    </StackPanel>
+                </Grid>
+                <WrapPanel Margin="0,12,0,0">
+                    <Button Theme="{StaticResource ActionDone}" Click="CreateNew_Click" IsEnabled="{Binding CanCreate}" ToolTip.Tip="Crea el token y su recordatorio">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE73E;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Crear" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ActionButton}" Click="CancelNew_Click" Content="Cancelar" />
+                </WrapPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- TOKENS EN ESTE EQUIPO: las variables que parecen tokens, con su valor tapado, para marcar las que se añaden -->
+        <DataTemplate x:Key="DiscoveryForm" x:DataType="local:DiscoveryDraft">
+            <StackPanel>
+                <TextBlock Text="Tokens en este equipo" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" Margin="0,6,0,16"
+                           Text="Variables de entorno de tu usuario y del equipo que parecen tokens, por su nombre o por su valor. El valor sale tapado y solo en esta ventana; no se guarda. Marca las que quieras añadir." />
+                <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding RowsVisible}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:CandidateRow">
+                            <Border Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,0,0,6">
+                                <DockPanel>
+                                    <ToggleButton DockPanel.Dock="Left" Theme="{StaticResource StepBox}" IsChecked="{Binding Chosen}" VerticalAlignment="Top"
+                                                  Margin="0,2,12,0" ToolTip.Tip="Añadirla como token" />
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Masked}" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                                       Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock IsVisible="{Binding EmptyVisible}" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap"
+                           Text="No hay ninguna variable que parezca un token, o ya son todas la variable de algún token." />
+                <StackPanel IsVisible="{Binding RowsVisible}" Margin="0,14,0,0">
+                    <TextBlock Classes="menuLabel" Text="CADA CUÁNTO CAMBIARLOS" Margin="2,0,0,8" />
+                    <ContentControl Content="{Binding Frequency}" ContentTemplate="{StaticResource FrequencyChips}" Focusable="False" />
+                    <TextBlock Classes="planHint" Margin="0"
+                               Text="Se crean con fecha de creación de hoy: si sabes la real, cámbiala después en cada token para que su recordatorio cuente bien." />
+                </StackPanel>
+                <WrapPanel Margin="0,14,0,0">
+                    <Button Theme="{StaticResource ActionDone}" Click="AddFound_Click" IsEnabled="{Binding CanAdd}" IsVisible="{Binding RowsVisible}"
+                            ToolTip.Tip="Crea un token por cada variable marcada, con su variable y su recordatorio">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE73E;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding AddText}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ActionButton}" Click="CancelFound_Click" Content="Cerrar" />
+                </WrapPanel>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- CAMPOS DEL FORMULARIO, con el aspecto de los de la configuración -->
+        <Style Selector="TextBox.planField">
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBox.planArea">
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="MinHeight" Value="60" />
+            <Setter Property="MaxHeight" Value="220" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+        </Style>
+        <Style Selector="TextBlock.planLabel">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+            <Setter Property="Margin" Value="0,5,14,8" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style Selector="TextBlock.planHint">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="Margin" Value="0,-4,0,8" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Como Seguridad: la página no se desplaza, solo la lista y el detalle, cada uno por su cuenta -->
+    <Grid RowDefinitions="Auto,*">
+        <!-- CABECERA: qué toca, cada cosa con su enlace, y cómo se añade un token -->
+        <Border Classes="lens" Padding="18,14" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Grid Width="48" Height="48" VerticalAlignment="Top" Margin="0,0,16,0"
+                      ToolTip.Tip="Tus tokens y claves de acceso (Git, APIs, servicios) y cuándo toca cambiarlos. Nunca se guarda su valor.">
+                    <Ellipse Fill="{DynamicResource Accent}" Opacity="0.16" />
+                    <Ellipse Stroke="{DynamicResource Accent}" StrokeThickness="1" Opacity="0.45" />
+                    <TextBlock Text="&#xE8D7;" Classes="icon" FontSize="22" Foreground="{DynamicResource Accent}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <TextBlock Text="{Binding Headline}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding HeadlineDetail}" Foreground="{DynamicResource FgMuted}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding Soon}" Margin="0,8,0,0" IsVisible="{Binding SoonVisible}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:CardItem">
+                                <Button Theme="{StaticResource ChipButton}" Click="Soon_Click" Margin="0,0,8,6" ToolTip.Tip="{Binding StateText}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="7" Height="7" Fill="{Binding StateBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="{Binding ReminderTitle}" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding Totals}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,6,0,0" />
+                </StackPanel>
+
+                <WrapPanel Grid.Column="2" VerticalAlignment="Top">
+                    <Button Theme="{StaticResource ChipButton}" Click="FindTokens_Click" Margin="0,0,8,0"
+                            ToolTip.Tip="Busca en tus variables de entorno las que parecen tokens, para añadirlas de una vez">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE721;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Buscar en este equipo" />
+                        </StackPanel>
+                    </Button>
+                    <Button Theme="{StaticResource ChipButton}" Click="NewCard_Click" ToolTip.Tip="Cuatro preguntas, y la app crea el token y su recordatorio">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Nuevo token" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="380,12,*">
+            <!-- LISTA: los recordatorios, el que toca antes primero, o los tokens por nombre -->
+            <Border Classes="lens" Padding="12" Margin="0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="TokenList" IsChecked="{Binding ShowReminders}" Content="{Binding RemindersChip}"
+                                     ToolTip.Tip="Cuándo toca cambiar cada token, el que antes primero" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="TokenList" IsChecked="{Binding ShowCards}" Content="{Binding CardsChip}"
+                                     ToolTip.Tip="Tus tokens y sus datos: para qué sirven, dónde se cambian, dónde se guardan…" />
+                    </StackPanel>
+                    <Grid>
+                        <Grid IsVisible="{Binding RemindersVisible}">
+                            <ListBox Classes="rows" ItemsSource="{Binding Reminders}" SelectedItem="{Binding SelectedReminder}" ItemTemplate="{StaticResource ReminderRow}"
+                                     Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+                            <TextBlock Text="{Binding RemindersEmptyText}" IsVisible="{Binding RemindersEmptyVisible}" Foreground="{DynamicResource FgFaint}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="16" />
+                        </Grid>
+                        <Grid IsVisible="{Binding CardsVisible}">
+                            <ListBox Classes="rows" ItemsSource="{Binding Cards}" SelectedItem="{Binding SelectedCard}" ItemTemplate="{StaticResource CardRow}"
+                                     Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+                            <TextBlock Text="{Binding CardsEmptyText}" IsVisible="{Binding CardsEmptyVisible}" Foreground="{DynamicResource FgFaint}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="16" />
+                        </Grid>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- DETALLE: el recordatorio elegido, o el token elegido para editar, o el alta de uno nuevo -->
+            <Border Grid.Column="2" Classes="lens" Padding="0" Margin="0">
+                <Grid>
+                    <Grid IsVisible="{Binding RemindersVisible}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16" IsVisible="{Binding ReminderDetailVisible}">
+                            <ContentControl Content="{Binding SelectedReminder}" ContentTemplate="{StaticResource ReminderView}" Focusable="False" />
+                        </ScrollViewer>
+                        <TextBlock Text="Elige un recordatorio de la lista." IsVisible="{Binding ReminderEmptyVisible}"
+                                   Foreground="{DynamicResource FgFaint}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                   TextWrapping="Wrap" Margin="24" />
+                    </Grid>
+                    <Grid IsVisible="{Binding CardsVisible}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16" IsVisible="{Binding DraftVisible}">
+                            <ContentControl Content="{Binding Draft}" ContentTemplate="{StaticResource NewTokenForm}" Focusable="False" />
+                        </ScrollViewer>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16" IsVisible="{Binding DiscoveryVisible}">
+                            <ContentControl Content="{Binding Discovery}" ContentTemplate="{StaticResource DiscoveryForm}" Focusable="False" />
+                        </ScrollViewer>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16" IsVisible="{Binding CardDetailVisible}">
+                            <StackPanel>
+                                <Border IsVisible="{Binding NoticeVisible}" Background="{x:Static local:SecurityModel.DoneFill}"
+                                        BorderBrush="{x:Static local:SecurityModel.DoneBrush}" BorderThickness="1" CornerRadius="{DynamicResource RadiusS}"
+                                        Padding="12,8" Margin="0,0,0,14">
+                                    <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" />
+                                </Border>
+                                <ContentControl Content="{Binding SelectedCard}" ContentTemplate="{StaticResource CardEditor}" Focusable="False" />
+                            </StackPanel>
+                        </ScrollViewer>
+                        <TextBlock Text="Elige un token de la lista o pulsa «Nuevo token»." IsVisible="{Binding CardEmptyVisible}"
+                                   Foreground="{DynamicResource FgFaint}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                   TextWrapping="Wrap" Margin="24" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

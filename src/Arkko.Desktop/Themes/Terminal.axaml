@@ -1,0 +1,73 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- TEMA TERMINAL: una pantalla de AS/400 (IBM 5250). Letra de ancho fijo, sin esquinas redondeadas y con barrido;
+         sus colores: verde casi todo, blanco lo destacado, azul lo elegido, amarillo lo que espera y rojo lo urgente. -->
+    <FontFamily x:Key="UiFont">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</FontFamily>
+    <FontFamily x:Key="ContentControlThemeFontFamily">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</FontFamily>
+    <CornerRadius x:Key="RadiusXS">0</CornerRadius>
+    <CornerRadius x:Key="RadiusS">0</CornerRadius>
+    <CornerRadius x:Key="RadiusM">0</CornerRadius>
+    <CornerRadius x:Key="RadiusL">0</CornerRadius>
+
+    <!-- Líneas de barrido: una franja oscura de cada tres píxeles, encima de todo -->
+    <LinearGradientBrush x:Key="Scanlines" StartPoint="0,0" EndPoint="0,3" SpreadMethod="Repeat">
+        <GradientStop Color="#00000000" Offset="0" />
+        <GradientStop Color="#00000000" Offset="0.5" />
+        <GradientStop Color="#14000000" Offset="0.5" />
+        <GradientStop Color="#14000000" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="Danger" Color="#D64545" />
+    <SolidColorBrush x:Key="DangerStrong" Color="#B32424" />
+    <SolidColorBrush x:Key="DataOpus" Color="#6EE36E" />
+    <SolidColorBrush x:Key="DataSonnet" Color="#6FAEF0" />
+    <SolidColorBrush x:Key="DataHaiku" Color="#E8E8E8" />
+    <SolidColorBrush x:Key="DataFable" Color="#F08CD0" />
+    <SolidColorBrush x:Key="DataOther" Color="#6ED6D6" />
+    <SolidColorBrush x:Key="DataCache" Color="#5DBA5D" />
+    <SolidColorBrush x:Key="DataFiveHour" Color="#F2D46A" />
+    <SolidColorBrush x:Key="DataSevenDay" Color="#6FAEF0" />
+    <SolidColorBrush x:Key="DataOtherLimit" Color="#F08CD0" />
+
+    <!-- Texto en tres intensidades, como en una 5250: el normal en verde, la negrita en azul y los títulos en blanco -->
+    <SolidColorBrush x:Key="Fg" Color="#6EE36E" />
+    <SolidColorBrush x:Key="FgStrong" Color="#6FAEF0" />
+    <SolidColorBrush x:Key="FgTitle" Color="#E8E8E8" />
+    <SolidColorBrush x:Key="FgLabel" Color="#6FAEF0" />
+    <SolidColorBrush x:Key="FgMuted" Color="#5DBA5D" />
+    <SolidColorBrush x:Key="FgFaint" Color="#52A852" />
+    <SolidColorBrush x:Key="Accent" Color="#E8E8E8" />
+
+    <SolidColorBrush x:Key="GlassBase" Color="#070B07" />
+    <SolidColorBrush x:Key="GlassEdge" Color="#2C5A2C" />
+    <SolidColorBrush x:Key="Sheen" Color="Transparent" />
+    <SolidColorBrush x:Key="LensFill" Color="#0C140C" />
+    <SolidColorBrush x:Key="LensEdge" Color="#224022" />
+
+    <SolidColorBrush x:Key="ButtonFill" Color="#122012" />
+    <SolidColorBrush x:Key="ButtonHover" Color="#1C331C" />
+    <SolidColorBrush x:Key="SubNavFill" Color="#040704" />
+    <SolidColorBrush x:Key="TrackFill" Color="#142414" />
+    <SolidColorBrush x:Key="TrackEdge" Color="#1E3A1E" />
+    <SolidColorBrush x:Key="ThumbFill" Color="#2C5A2C" />
+    <SolidColorBrush x:Key="ThumbHover" Color="#56B856" />
+    <SolidColorBrush x:Key="RingInner" Color="#0C140C" />
+    <SolidColorBrush x:Key="RingTrack" Color="#1E3A1E" />
+    <SolidColorBrush x:Key="ChipOn" Color="#16304D" />
+    <SolidColorBrush x:Key="ChipOnEdge" Color="#E8E8E8" />
+    <SolidColorBrush x:Key="PrimaryFill" Color="#E8E8E8" />
+    <SolidColorBrush x:Key="PrimaryText" Color="#070B07" />
+    <SolidColorBrush x:Key="SwitchOn" Color="#4FA84F" />
+    <SolidColorBrush x:Key="TipFill" Color="#0A100A" />
+    <SolidColorBrush x:Key="TipEdge" Color="#3F8A3F" />
+    <!-- El submenú de un menú del clic derecho sale en su propia ventana emergente, con los colores de serie: se le dan los del menú -->
+    <StaticResource x:Key="MenuFlyoutPresenterBackground" ResourceKey="TipFill" />
+    <StaticResource x:Key="MenuFlyoutPresenterBorderBrush" ResourceKey="TipEdge" />
+    <StaticResource x:Key="OverlayCornerRadius" ResourceKey="RadiusM" />
+
+    <SolidColorBrush x:Key="TaskLane" Color="#040704" />
+    <SolidColorBrush x:Key="TaskCardFill" Color="#0F1A0F" />
+    <SolidColorBrush x:Key="TaskCardEdge" Color="#224022" />
+    <SolidColorBrush x:Key="TaskCardHoverEdge" Color="#E8E8E8" />
+    <SolidColorBrush x:Key="TaskSection" Color="#122012" />
+</ResourceDictionary>

@@ -1,0 +1,45 @@
+/* RELOJ: EL RELOJ DE UNA SESIÓN, EN RELOJES Y EN EL CARRIL DEL CORCHO EN DIRECTO */
+
+/* Usa los colores de la página que lo carga (--fg, --dg-*, --st-*); estos son solo los suyos */
+:root {
+    --ck-agent: #a78bfa;
+    /* El fondo de la página puede ser un degradado: lo opaco del reloj (el disco, el fondo de las letras) va con su color propio */
+    --ck-base: #1c1e25;
+    --ck-face: color-mix(in srgb, var(--fg) 4%, transparent);
+    --ck-track: color-mix(in srgb, var(--fg) 6%, transparent);
+    --ck-tick: color-mix(in srgb, var(--fg-faint) 70%, transparent);
+    --ck-disc: color-mix(in srgb, var(--fg) 8%, var(--ck-base));
+}
+:root[data-theme="light"] {
+    --ck-agent: #7c5cd6;
+    --ck-base: #f7f8fa;
+}
+
+/* EL RELOJ */
+.ck-face { fill: var(--ck-face); stroke: var(--lens-edge); stroke-width: 2; }
+.ck-tick { stroke: var(--ck-tick); stroke-width: 3; }
+.ck-track { fill: none; stroke: var(--ck-track); }
+.ck-span { fill: none; }
+.ck-h-read { stroke: var(--dg-read); }
+.ck-h-search { stroke: var(--dg-search); }
+.ck-h-edit { stroke: var(--dg-edit); }
+.ck-h-run { stroke: var(--dg-run); }
+.ck-h-think { stroke: var(--dg-think); }
+.ck-h-say { stroke: var(--dg-say); }
+.ck-h-other { stroke: var(--dg-other); }
+.ck-h-ask { stroke: var(--st-waiting); }
+.ck-h-wait { stroke: var(--ck-agent); stroke-dasharray: 10 9; }
+.ck-prompt { stroke: var(--c-user); stroke-width: 5; }
+.ck-end { stroke: var(--fg); stroke-width: 5; }
+.ck-hand { stroke: var(--danger); stroke-width: 7; stroke-linecap: round; }
+.ck-disc { fill: var(--ck-disc); }
+.ck-mark { fill: var(--fg); font-family: var(--ui-font); font-weight: 700; font-size: 64px; }
+.ck-asking .ck-mark { fill: var(--st-waiting); }
+.ck-check { fill: none; stroke: var(--st-done); stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+.ck-tag circle { fill: var(--ck-base); stroke: var(--ck-agent); stroke-width: 2.5; }
+.ck-tag text { fill: var(--ck-agent); font-family: var(--ui-font); font-weight: 700; font-size: 17px; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .ck-asking .ck-mark { animation: ck-blink 1.2s steps(2, jump-none) infinite; }
+}
+@keyframes ck-blink { 50% { opacity: 0.25; } }

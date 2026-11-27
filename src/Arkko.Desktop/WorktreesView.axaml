@@ -1,0 +1,240 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.WorktreesView"
+             x:DataType="local:WorktreesModel">
+    <UserControl.Styles>
+        <!-- El aro de carga solo gira mientras se ve: una animación sin fin mantendría la ventana repintándose para nada -->
+        <Style Selector="Grid.spinning">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <!-- FILA DE UN WORKTREE: separada de la anterior por una línea; al pasar, un fondo suave -->
+        <Style Selector="Border.treeRow">
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardEdge}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+            <Setter Property="Padding" Value="0,12,12,12" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.treeRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+        </Style>
+        <!-- Pastilla de estado de una fila -->
+        <Style Selector="Border.pill">
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Padding" Value="7,1,8,2" />
+            <Setter Property="Margin" Value="0,0,6,4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- BARRA: el filtro de los que se pueden cerrar y cuántos hay; a la derecha, cuándo se leyó -->
+        <DockPanel Margin="0,0,0,14">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding UpdatedText}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Theme="{StaticResource ChipButton}" Click="Refresh_Click" IsEnabled="{Binding CanRefresh}"
+                        ToolTip.Tip="Volver a mirar los worktrees y preguntar al remoto por sus PR">
+                    <TextBlock Text="&#xE72C;" Classes="icon" FontSize="11" Margin="0,2" />
+                </Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Filtro: solo los que se pueden cerrar, con cuántos son; sin ninguno, no se pulsa -->
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding OnlyLeftover}" Content="{Binding FilterText}"
+                              IsEnabled="{Binding CanFilter}" ToolTip.ShowOnDisabled="True" ToolTip.ShowDelay="300">
+                    <ToolTip.Tip>
+                        <StackPanel MaxWidth="320">
+                            <TextBlock Text="Solo los que se pueden cerrar" FontWeight="SemiBold" />
+                            <TextBlock Text="Un worktree se puede cerrar si:" Foreground="{DynamicResource FgMuted}" FontSize="11" Margin="0,8,0,4" />
+                            <TextBlock Text="•  su PR ya está mergeada" FontSize="11" />
+                            <TextBlock Text="•  su tarea está hecha o descartada en el tablero" FontSize="11" />
+                            <TextBlock Text="•  su carpeta ya no existe, pero git la sigue apuntando" FontSize="11" />
+                            <Border BorderBrush="{DynamicResource TipEdge}" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,8,0,0">
+                                <TextBlock Text="{Binding FilterNow}" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                            </Border>
+                        </StackPanel>
+                    </ToolTip.Tip>
+                </ToggleButton>
+                <TextBlock Text="{Binding Summary}" Foreground="{DynamicResource FgMuted}" FontSize="12" VerticalAlignment="Center" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- CARGA: hasta la primera lectura de lo local; las PR llegan después, sin rueda -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding LoadingVisible}">
+            <Grid Classes.spinning="{Binding LoadingVisible}" Width="34" Height="34" HorizontalAlignment="Center">
+                <Ellipse Stroke="{DynamicResource TrackEdge}" StrokeThickness="3" />
+                <Path Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeLineCap="Round" Data="M 17,1.5 A 15.5,15.5 0 0 1 32.5,17" />
+            </Grid>
+            <TextBlock Text="Mirando los worktrees…" Margin="0,14,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Text="{Binding EmptyText}" IsVisible="{Binding EmptyVisible}" Foreground="{DynamicResource FgMuted}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+        <!-- LISTA: una tarjeta por repositorio, con la franja de su color, sus ramas base en una línea y una fila por worktree de trabajo -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding ListVisible}" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Groups}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:WorktreeGroup">
+                        <Border Margin="0,0,10,16" Background="{DynamicResource TaskCardFill}" BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="1"
+                                CornerRadius="{DynamicResource RadiusM}" ClipToBounds="True">
+                            <StackPanel>
+                                <!-- Franja del repositorio, en su color: el mismo que en Sesiones, el Tablero y el Diario -->
+                                <Border Background="{Binding Brush}" Padding="16,8,14,9">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Classes="ownColor" Text="{Binding Summary}" Foreground="White" FontSize="11"
+                                                   Opacity="0.85" VerticalAlignment="Center" />
+                                        <TextBlock Classes="ownColor" Text="{Binding Title}" Foreground="White" FontSize="14" FontWeight="Bold"
+                                                   VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </Border>
+                                <TextBlock Text="{Binding RemoteErrorText}" IsVisible="{Binding RemoteErrorVisible}" Foreground="{DynamicResource DataFiveHour}"
+                                           FontSize="11" TextWrapping="Wrap" Margin="16,8,14,0" />
+
+                                <!-- Ramas base: no se cierran nunca; en una línea, con lo que tengan sin subir -->
+                                <DockPanel Margin="16,9,14,9" IsVisible="{Binding BasesVisible}">
+                                    <TextBlock DockPanel.Dock="Left" Text="BASE" Classes="menuLabel" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                    <ItemsControl ItemsSource="{Binding Bases}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:WorktreeRow">
+                                                <Border CornerRadius="9" Padding="8,2,9,3" Margin="0,0,6,0" Background="{DynamicResource TrackFill}" Cursor="Hand"
+                                                        PointerReleased="OpenBase_Click" ToolTip.ShowDelay="300">
+                                                    <ToolTip.Tip>
+                                                        <StackPanel MaxWidth="320">
+                                                            <TextBlock Text="{Binding Folder}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding Path}" Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                            <TextBlock Classes="ownColor" Text="{Binding LocalText}" Foreground="{Binding LocalBrush}" FontSize="11" Margin="0,4,0,0" />
+                                                            <Border BorderBrush="{DynamicResource TipEdge}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,6,0,0">
+                                                                <TextBlock Text="Rama base: no se cierra nunca. Clic para abrir su carpeta." Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </ToolTip.Tip>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Folder}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource FgMuted}" />
+                                                        <Ellipse Width="6" Height="6" Fill="{Binding LocalBrush}" VerticalAlignment="Center" Margin="7,1,0,0"
+                                                                 IsVisible="{Binding LocalPillVisible}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </DockPanel>
+
+                                <TextBlock Text="Sin worktrees de trabajo: solo las ramas base." IsVisible="{Binding NoRowsVisible}" Foreground="{DynamicResource FgFaint}"
+                                           FontSize="11" Margin="16,0,14,10" />
+
+                                <!-- Worktrees de trabajo: raya del color del repositorio, carpeta, tarea y estado en pastillas, y acciones -->
+                                <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding RowsVisible}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:WorktreeRow">
+                                            <Border Classes="treeRow">
+                                                <Grid ColumnDefinitions="Auto,220,*,Auto">
+                                                    <Border Width="3" CornerRadius="2" Background="{Binding RepoBrush}" Margin="0,0,13,0" />
+
+                                                    <!-- La carpeta y su rama si no se llama igual -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
+                                                        <TextBlock Text="{Binding Folder}" FontFamily="{StaticResource MonoFont}" FontSize="13" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+                                                        <TextBlock Text="{Binding BranchText}" IsVisible="{Binding BranchVisible}" Foreground="{DynamicResource FgFaint}"
+                                                                   FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                    </StackPanel>
+
+                                                    <!-- Su tarea y, debajo, el estado: columna, PR, lo local y si se puede cerrar -->
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                        <StackPanel Orientation="Horizontal" IsVisible="{Binding KeyVisible}" Margin="0,0,0,6">
+                                                            <TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource FgLabel}"
+                                                                       VerticalAlignment="Center" Cursor="Hand" PointerReleased="Task_Click" ToolTip.Tip="Ver la tarea en el Tablero" />
+                                                            <TextBlock Text="{Binding TaskTitle}" Foreground="{DynamicResource Fg}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center" Margin="9,0,0,0" />
+                                                        </StackPanel>
+                                                        <WrapPanel>
+                                                            <Border Classes="pill" Background="{DynamicResource TrackFill}" IsVisible="{Binding StateVisible}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="6" Height="6" Fill="{Binding StateBrush}" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                                                    <TextBlock Text="{Binding StateText}" FontSize="10" Foreground="{DynamicResource FgMuted}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Classes="pill" Padding="6,1,8,2" Background="{Binding PrFill}" IsVisible="{Binding PrVisible}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Path Data="{x:Static local:GlyphShapes.PullRequest}" Stroke="{Binding PrBrush}" StrokeThickness="1.4"
+                                                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                                                    <TextBlock Classes="ownColor" Text="{Binding PrText}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding PrBrush}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Classes="pill" Background="{Binding LocalPillFill}" IsVisible="{Binding LocalPillVisible}">
+                                                                <TextBlock Classes="ownColor" Text="{Binding LocalText}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding LocalBrush}" />
+                                                            </Border>
+                                                            <StackPanel Orientation="Horizontal" IsVisible="{Binding CleanVisible}" Margin="0,0,8,4" VerticalAlignment="Center">
+                                                                <TextBlock Text="&#xE73E;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                                                           Margin="0,1,5,0" />
+                                                                <TextBlock Text="{Binding LocalText}" FontSize="10" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <!-- Lo publicado en claude.ai desde la carpeta; al pulsarlo, Artifacts filtrada por ella -->
+                                                            <Border Classes="pill" Background="{DynamicResource TrackFill}" IsVisible="{Binding ArtifactsVisible}" Cursor="Hand"
+                                                                    PointerReleased="Artifacts_Click" ToolTip.Tip="Ver en Artifacts lo publicado en claude.ai desde esta carpeta">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="&#xE7C3;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center"
+                                                                               Margin="0,1,5,0" />
+                                                                    <TextBlock Text="{Binding ArtifactsText}" FontSize="10" Foreground="{DynamicResource FgMuted}" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <Border Classes="pill" Background="{DynamicResource ChipOn}" BorderBrush="{DynamicResource ChipOnEdge}" BorderThickness="1"
+                                                                    IsVisible="{Binding Leftover}" ToolTip.ShowDelay="300">
+                                                                <ToolTip.Tip>
+                                                                    <StackPanel MaxWidth="320">
+                                                                        <TextBlock Text="Ya se puede cerrar" FontWeight="SemiBold" />
+                                                                        <TextBlock Text="{Binding LeftoverReason}" Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap"
+                                                                                   Margin="0,6,0,0" />
+                                                                        <TextBlock Text="{Binding CloseWarning}" IsVisible="{Binding CloseWarningVisible}"
+                                                                                   Foreground="{DynamicResource DataFiveHour}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                                                    </StackPanel>
+                                                                </ToolTip.Tip>
+                                                                <TextBlock Text="{Binding LeftoverPill}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                                            </Border>
+                                                        </WrapPanel>
+                                                    </StackPanel>
+
+                                                    <!-- Acciones: si se puede cerrar, copiar la orden; y abrir la carpeta -->
+                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Theme="{StaticResource ChipButton}" Click="Copy_Click" IsVisible="{Binding Leftover}" Margin="0,0,6,0"
+                                                                ToolTip.ShowDelay="300">
+                                                            <ToolTip.Tip>
+                                                                <StackPanel MaxWidth="320">
+                                                                    <TextBlock Text="{Binding CopyTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                                    <TextBlock Text="{Binding CopyWhere}" Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap"
+                                                                               Margin="0,6,0,0" />
+                                                                    <TextBlock Text="{Binding CloseWarning}" IsVisible="{Binding CloseWarningVisible}" Foreground="{DynamicResource DataFiveHour}"
+                                                                               FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                                                </StackPanel>
+                                                            </ToolTip.Tip>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="&#xE8C8;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                                                <TextBlock Text="{Binding CopyText}" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button Theme="{StaticResource ChipButton}" Click="Open_Click" IsVisible="{Binding CanOpen}" ToolTip.Tip="Abrir la carpeta">
+                                                            <TextBlock Text="&#xE838;" Classes="icon" FontSize="11" Margin="0,2" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

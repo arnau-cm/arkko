@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bocetos AK verde</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@600&family=Geist+Mono:wght@500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f4f5; --fg:#1d1d21; --muted:#6b6b74; --card:#fff; --line:#e3e3e7; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 Inter, system-ui, sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:20px; margin:36px 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 8px; }
+  .switch { display:inline-flex; flex-wrap:wrap; gap:4px; background:#e4e4e7; border-radius:18px; padding:3px; margin:8px 0 0; }
+  .switch button { border:0; background:transparent; font:600 13px Inter, sans-serif; padding:5px 14px; border-radius:99px; cursor:pointer; color:#444; }
+  .switch button.on { background:#fff; color:#111; box-shadow:0 1px 2px rgba(0,0,0,.12); }
+  .wrap { overflow-x:auto; margin-top:14px; border-radius:14px; border:1px solid var(--line); }
+  table { border-collapse:collapse; width:100%; min-width:900px; }
+  th { font-size:13px; font-weight:600; background:var(--card); padding:10px 14px; text-align:center; border-bottom:1px solid var(--line); }
+  td { padding:16px 14px; text-align:center; vertical-align:middle; }
+  td.name { text-align:left; font-weight:600; font-size:14px; width:230px; }
+  td.name small { display:block; font-weight:400; font-size:12px; opacity:.65; margin-top:2px; }
+  .tag { display:inline-block; font-size:10px; font-weight:600; padding:0 7px; border-radius:99px; margin-left:6px; vertical-align:1px; }
+  .tag.fav { background:#dcf5e3; color:#1a6b34; }
+  .tag.new { background:#e3e8ff; color:#2b3a8f; }
+  table.dark td { background:#161618; color:#ccc; }
+  table.light td { background:#f6f6f6; color:#222; }
+  table td + td { border-left:1px solid rgba(127,127,127,.15); }
+  tr + tr td { border-top:1px solid rgba(127,127,127,.15); }
+  .sizes { display:inline-flex; align-items:flex-end; gap:12px; }
+  svg { display:block; }
+  .marks { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin-top:12px; }
+  .mark { border-radius:12px; padding:18px 20px; display:flex; align-items:center; gap:12px; }
+  .mark.dark { background:#0B0B0C; color:#D9D6CF; }
+  .mark.light { background:#E4E1DA; color:#0B0B0C; }
+  .mark .w { font-size:26px; line-height:1; }
+  .mark .geist { font-family:Geist, sans-serif; font-weight:600; letter-spacing:-.03em; }
+  .mark .mono { font-family:'Geist Mono', monospace; font-weight:500; letter-spacing:-.02em; }
+  .mark small { display:block; font:12px Inter, sans-serif; opacity:.55; margin-top:4px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="3" result="fine"/>
+      <feColorMatrix in="fine" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.6 1.2" result="raw"/>
+      <feColorMatrix in="raw" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .14 0" result="pores"/>
+      <feComposite in="pores" in2="SourceGraphic" operator="in" result="pores-in"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pores-in"/></feMerge>
+    </filter>
+    <!-- Un halo del color del fondo alrededor de la letra, para separarla de lo que tiene detrás -->
+    <filter id="halo" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="3.5"/></filter>
+  </defs>
+</svg>
+<main>
+  <h1>La AK en verde, con más guiños de desarrollo</h1>
+  <p class="lead">El acento ya es el verde. Las tres letras (Cuchilla, Pincel y Prompt) en columnas, y en filas los tratamientos: los tres que te gustan y otros nuevos sacados de git, de la terminal y de DevOps. Incluido el prompt por detrás de la letra.</p>
+  <div class="switch" id="theme"><button data-v="dark" class="on">Fondo oscuro</button><button data-v="light">Fondo claro</button></div>
+
+  <div class="wrap"><table id="matrix" class="dark"></table></div>
+
+  <h2>Con el nombre</h2>
+  <div class="marks" id="marks"></div>
+</main>
+
+<script>
+const GREEN = '#3FB950';
+const themes = {
+  dark:  { tile: '#0B0B0C', ink: '#BDB9B1', line: '#3A3936', faint: '#55524D' },
+  light: { tile: '#B3AFA7', ink: '#0B0B0C', line: '#8E8A82', faint: '#6E6A63' }
+};
+const MONO = `font-family="'Geist Mono', Consolas, monospace"`;
+
+function stroke(x1, y1, x2, y2, ws, wm, we, bend = 0) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const side = s => {
+    const A = [x1 + nx * ws / 2 * s, y1 + ny * ws / 2 * s];
+    const M = [mx + nx * wm / 2 * s, my + ny * wm / 2 * s];
+    const B = [x2 + nx * we / 2 * s, y2 + ny * we / 2 * s];
+    return { A, B, C: [2 * M[0] - (A[0] + B[0]) / 2, 2 * M[1] - (A[1] + B[1]) / 2] };
+  };
+  const a = side(1), b = side(-1), f = n => n.toFixed(1);
+  return `M${f(a.A[0])} ${f(a.A[1])} Q${f(a.C[0])} ${f(a.C[1])} ${f(a.B[0])} ${f(a.B[1])} L${f(b.B[0])} ${f(b.B[1])} Q${f(b.C[0])} ${f(b.C[1])} ${f(b.A[0])} ${f(b.A[1])} Z`;
+}
+
+// Las letras: cómo se pintan (ink, y ac para su acento propio) y sus puntos clave
+const letters = {
+  cuchilla: { name: 'Cuchilla',
+    draw: (ink, ac) => `
+      <path d="${stroke(60, 30, 28, 98, 14, 10, 1)}" fill="${ink}"/>
+      <path d="${stroke(60, 30, 60, 98, 14, 11, 2)}" fill="${ink}"/>
+      <path d="${stroke(62, 68, 98, 98, 12, 8, 1)}" fill="${ink}"/>
+      <path d="${stroke(62, 68, 98, 32, 12, 8, 1)}" fill="${ac}"/>`,
+    p: { apex: [60, 30], foot: [60, 98], join: [62, 68], arm: [98, 32], leg: [98, 98], left: [28, 98], right: 98 } },
+  pincel: { name: 'Pincel',
+    draw: (ink, ac) => `
+      <path d="${stroke(30, 96, 60, 30, 2, 9, 5, -2)}" fill="${ink}"/>
+      <path d="${stroke(60, 28, 58, 98, 4, 8, 1.5, 1)}" fill="${ink}"/>
+      <path d="${stroke(60, 70, 98, 40, 7, 6, 1, -5)}" fill="${ink}"/>
+      <path d="${stroke(61, 70, 96, 98, 7, 5, 1.5, 4)}" fill="${ink}"/>
+      <ellipse cx="88" cy="28" rx="8" ry="4.5" transform="rotate(-25 88 28)" fill="${ac}"/>`,
+    p: { apex: [60, 29], foot: [58, 98], join: [60, 70], arm: [98, 40], leg: [96, 98], left: [30, 96], right: 98 } },
+  prompt: { name: 'Prompt',
+    draw: (ink, ac) => `
+      <path d="M26 96 L50 32 V96 M50 66 L76 32 M50 66 L76 96" fill="none" stroke="${ink}" stroke-width="11" stroke-linejoin="miter"/>
+      <rect x="86" y="62" width="16" height="34" fill="${ac}"/>`,
+    p: { apex: [50, 32], foot: [50, 96], join: [50, 66], arm: [76, 32], leg: [76, 96], left: [26, 96], right: 102 } }
+};
+
+const tile = t => `<rect x="6" y="6" width="116" height="116" rx="28" fill="${t.tile}" filter="url(#grain)"/>`;
+const at = (tf, body) => `<g transform="${tf}">${body}</g>`;
+// La letra, con un halo del fondo detrás para que se separe de lo que tenga debajo
+const withHalo = (L, t, ink, ac) => `<g filter="url(#halo)">${L.draw(t.tile, t.tile)}</g>${L.draw(ink, ac)}`;
+
+const treatments = {
+  liso: { name: 'Liso', fav: true, hint: 'la letra, sin más',
+    draw: (L, t) => tile(t) + L.draw(t.ink, GREEN) },
+  commit: { name: 'Commit', fav: true, hint: 'un nodo donde nace la rama',
+    draw: (L, t) => { const [x, y] = L.p.join;
+      return tile(t) + L.draw(t.ink, GREEN) + `<circle cx="${x}" cy="${y}" r="5.5" fill="${t.tile}" stroke="${t.ink}" stroke-width="2.8"/>`; } },
+  prompt: { name: 'Prompt ›', fav: true, hint: 'el símbolo delante',
+    draw: (L, t) => tile(t) + `<path d="M18 50 L32 64 L18 78" fill="none" stroke="${GREEN}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`
+      + at('translate(74 64) scale(.74) translate(-64 -64)', L.draw(t.ink, t.ink)) },
+  detras: { name: '› detrás', isNew: true, hint: 'el prompt grande, en verde, por detrás',
+    draw: (L, t) => tile(t) + `<path d="M20 28 L58 64 L20 100" fill="none" stroke="${GREEN}" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>`
+      + at('translate(76 66) scale(.8) translate(-64 -64)', withHalo(L, t, t.ink, t.ink)) },
+  detrasTenue: { name: '› detrás, tenue', isNew: true, hint: 'el prompt como marca de agua; la letra lleva el verde',
+    draw: (L, t) => tile(t) + `<path d="M22 22 L68 64 L22 106" fill="none" stroke="${t.line}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>`
+      + at('translate(72 64) scale(.86) translate(-64 -64)', withHalo(L, t, t.ink, GREEN)) },
+  pr: { name: 'Pull request', isNew: true, hint: 'los tres nodos del icono de PR',
+    draw: (L, t) => { const { apex, foot, arm } = L.p;
+      const ring = ([x, y]) => `<circle cx="${x}" cy="${y}" r="5.5" fill="${t.tile}" stroke="${t.ink}" stroke-width="2.8"/>`;
+      return tile(t) + L.draw(t.ink, t.ink) + ring(apex) + ring(foot) + `<circle cx="${arm[0]}" cy="${arm[1]}" r="7" fill="${GREEN}"/>`; } },
+  check: { name: 'Check verde', isNew: true, hint: 'el ✓ de una build que pasa, en la esquina',
+    draw: (L, t) => tile(t) + L.draw(t.ink, t.ink) + `
+      <circle cx="100" cy="100" r="13" fill="${GREEN}" stroke="${t.tile}" stroke-width="4"/>
+      <path d="M93.5 100.5 L98.5 105.5 L107 95.5" fill="none" stroke="${t.tile}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>` },
+  diff: { name: 'Diff', isNew: true, hint: 'un + verde y un − tenue, como en un cambio',
+    draw: (L, t) => tile(t) + L.draw(t.ink, t.ink) + `
+      <path d="M100 18 V34 M92 26 H108" stroke="${GREEN}" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M18 112 H30" stroke="${t.faint}" stroke-width="4.5" stroke-linecap="round"/>` },
+  cursor: { name: 'CLI', isNew: true, hint: 'la letra recién tecleada y el cursor detrás, en la base',
+    draw: (L, t) => tile(t) + at('translate(-6 0)', L.draw(t.ink, t.ink)) + `<rect x="${L.p.right + 2}" y="92" width="14" height="6" fill="${GREEN}"/>` },
+  devops: { name: 'DevOps ∞', isNew: true, hint: 'el bucle de DevOps detrás, con un tramo verde',
+    draw: (L, t) => {
+      const loop = 'M64 64 C52 44 22 44 22 64 C22 84 52 84 64 64 C76 44 106 44 106 64 C106 84 76 84 64 64 Z';
+      return tile(t) + `<path d="${loop}" fill="none" stroke="${t.line}" stroke-width="7"/>
+        <path d="M64 64 C76 44 106 44 106 64" fill="none" stroke="${GREEN}" stroke-width="7" stroke-linecap="round"/>`
+        + withHalo(L, t, t.ink, t.ink); } },
+  pipeline: { name: 'Pipeline', isNew: true, hint: 'tres pasos de un pipeline debajo; el último, en verde',
+    draw: (L, t) => tile(t) + at('translate(64 56) scale(.84) translate(-64 -64)', L.draw(t.ink, t.ink)) + `
+      <path d="M40 108 H88" stroke="${t.line}" stroke-width="2.4"/>
+      <circle cx="40" cy="108" r="4.5" fill="${t.ink}"/><circle cx="64" cy="108" r="4.5" fill="${t.ink}"/><circle cx="88" cy="108" r="5" fill="${GREEN}"/>` }
+};
+
+let theme = 'dark';
+const icon = (lk, tk, th, s) => `<svg width="${s}" height="${s}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">${treatments[tk].draw(letters[lk], themes[th])}</svg>`;
+
+function render() {
+  const m = document.getElementById('matrix');
+  m.className = theme;
+  m.innerHTML = `<tr><th></th>${Object.values(letters).map(l => `<th>${l.name}</th>`).join('')}</tr>` +
+    Object.entries(treatments).map(([tk, T]) => `<tr><td class="name">${T.name}${T.fav ? '<span class="tag fav">te gusta</span>' : ''}${T.isNew ? '<span class="tag new">nuevo</span>' : ''}<small>${T.hint}</small></td>${
+      Object.keys(letters).map(lk => `<td><span class="sizes">${[96, 32, 16].map(s => icon(lk, tk, theme, s)).join('')}</span></td>`).join('')}</tr>`).join('');
+
+  const marks = [['cuchilla', 'commit', 'dark', 'geist'], ['prompt', 'detras', 'dark', 'mono'], ['pincel', 'liso', 'dark', 'geist'],
+                 ['cuchilla', 'pr', 'light', 'geist'], ['cuchilla', 'check', 'dark', 'geist'], ['prompt', 'cursor', 'light', 'mono']];
+  document.getElementById('marks').innerHTML = marks.map(([l, tk, th, f]) =>
+    `<div class="mark ${th}">${icon(l, tk, th, 44)}<div><div class="w ${f}">${f === 'mono' ? 'arkko' : 'Arkko'}</div><small>${letters[l].name} · ${treatments[tk].name}</small></div></div>`).join('');
+}
+
+document.getElementById('theme').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#theme button').forEach(x => x.classList.toggle('on', x === b));
+  theme = b.dataset.v; render();
+});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.BoardsSettingsView"
+             x:DataType="local:BoardsModel">
+    <UserControl.Resources>
+        <!-- Ficha de una conexión: su color y nombre, de qué proveedor es, qué tableros ve y si funciona -->
+        <DataTemplate x:Key="ConnectionCard" x:DataType="local:ConnectionRow">
+            <Border Classes="lens" Padding="16,12" Margin="0,0,0,8">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Theme="{StaticResource ChipButton}" Content="Editar" Click="Edit_Click" Margin="0,0,8,0" />
+                        <Button Theme="{StaticResource ChipButton}" Content="Eliminar" Click="Delete_Click" />
+                    </StackPanel>
+                    <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Fill="{Binding ColorBrush}" VerticalAlignment="Top" Margin="0,4,12,0" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock TextTrimming="CharacterEllipsis">
+                            <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" /><Run
+                                 Text="{Binding ProfileText, Mode=OneWay}" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgMuted}" Classes="label" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Ellipse Width="6" Height="6" Fill="{Binding StatusBrush}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                            <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                        </StackPanel>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Ficha de un perfil importado: su nombre, lo que hace dicho en una frase, y copiarlo o eliminarlo -->
+        <DataTemplate x:Key="ProfileCard" x:DataType="local:ProfileRow">
+            <Border Classes="lens" Padding="16,12" Margin="0,0,0,8">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Theme="{StaticResource ChipButton}" Content="Copiar" Click="CopyProfile_Click" Margin="0,0,8,0"
+                                ToolTip.Tip="Copia el perfil para pasárselo a otra persona" />
+                        <Button Theme="{StaticResource ChipButton}" Content="Eliminar" Click="DeleteProfile_Click" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Summary}" Classes="settingHint" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Un ajuste del perfil: texto normal, o clave guardada en la app o leída de una variable de entorno -->
+        <DataTemplate x:Key="SettingFieldRow" x:DataType="local:SettingField">
+            <StackPanel Margin="0,8">
+                <DockPanel>
+                    <TextBox DockPanel.Dock="Right" Width="320" Classes="field" IsVisible="{Binding TextVisible}" Text="{Binding Value, Delay=500}" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Classes="settingName" Text="{Binding Label}" />
+                        <TextBlock Classes="settingHint" Text="{Binding Hint}" IsVisible="{Binding HintVisible}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+                <StackPanel IsVisible="{Binding SecretVisible}" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Theme="{StaticResource ChipRadio}" Content="Guardarla en Arkko" IsChecked="{Binding UseApp}" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" Content="Leerla de una variable de entorno" IsChecked="{Binding UseEnv}" />
+                    </StackPanel>
+                    <!-- En la app: se escribe una vez; después solo se ve que está guardada -->
+                    <DockPanel Margin="0,8,0,0" IsVisible="{Binding BoxVisible}">
+                        <TextBlock DockPanel.Dock="Right" Text="Se guarda cifrada al escribirla" Foreground="{DynamicResource FgFaint}" FontSize="11"
+                                   VerticalAlignment="Center" Margin="12,0,0,0" />
+                        <TextBox Classes="field" Width="320" HorizontalAlignment="Left" PasswordChar="•" RevealPassword="False" TextChanged="Secret_Changed" />
+                    </DockPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" IsVisible="{Binding SavedVisible}">
+                        <TextBlock Text="•••••••••••• guardada" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <Button Theme="{StaticResource ChipButton}" Content="Cambiar" Click="ChangeSecret_Click" />
+                    </StackPanel>
+                    <!-- De una variable: solo se guarda su nombre -->
+                    <StackPanel Margin="0,8,0,0" IsVisible="{Binding EnvVisible}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding EnvStatus}" Foreground="{Binding EnvStatusBrush}" FontSize="11"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" />
+                            <TextBox Width="320" HorizontalAlignment="Left" Classes="field" FontFamily="{StaticResource MonoFont}" Text="{Binding EnvName, Delay=500}" />
+                        </DockPanel>
+                        <TextBlock Classes="settingHint" Foreground="{DynamicResource DataFiveHour}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Text="Las sesiones de Claude Code heredan las variables de entorno: un agente puede leer esta clave y enviarla a la API. Guardada en Arkko, Claude no puede leerla." />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Un proyecto que se puede ver: su interruptor y, encendido, el proyecto entero o sus subtableros -->
+        <DataTemplate x:Key="ProjectChoiceRow" x:DataType="local:ProjectChoice">
+            <StackPanel Margin="0,6">
+                <DockPanel>
+                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding IsOn}" VerticalAlignment="Center" />
+                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                        <Run Text="{Binding Key, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run
+                             Text="{Binding Name, Mode=OneWay}" Foreground="{DynamicResource FgMuted}" />
+                    </TextBlock>
+                </DockPanel>
+                <StackPanel IsVisible="{Binding BoardsVisible}" Margin="0,8,0,0">
+                    <ItemsControl ItemsSource="{Binding Boards}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:BoardChoice">
+                                <!-- Cada subtablero, con el punto de su color: al pulsarlo, se elige otro -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,10,4">
+                                    <Border Width="16" Height="16" CornerRadius="8" Background="{Binding ColorBrush}" BorderBrush="{DynamicResource TrackEdge}"
+                                            BorderThickness="1" Margin="0,0,5,0" VerticalAlignment="Center" Cursor="Hand" IsVisible="{Binding DotVisible}"
+                                            PointerReleased="SubBoardColor_Click" ToolTip.ShowDelay="300">
+                                        <ToolTip.Tip>
+                                            <StackPanel MaxWidth="300">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="9" Height="9" Fill="{Binding ColorBrush}" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                                    <TextBlock Text="Cambiar el color" FontWeight="SemiBold" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding ColorNote}" Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                            </StackPanel>
+                                        </ToolTip.Tip>
+                                    </Border>
+                                    <ToggleButton Theme="{StaticResource ChipToggle}" Content="{Binding Name}" IsChecked="{Binding IsOn}" Margin="0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding Note}" Foreground="{DynamicResource FgFaint}" FontSize="11" IsVisible="{Binding NoteVisible}" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- Campo de texto con el aspecto de los demás de la configuración -->
+        <Style Selector="TextBox.field">
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel>
+        <!-- PERFILES: cómo leer cada panel. La app no trae ninguno: se importan pegándolos -->
+        <TextBlock Classes="menuLabel" Text="PERFILES" Margin="2,0,0,8" />
+        <StackPanel IsVisible="{Binding ProfilesVisible}">
+            <ItemsControl ItemsSource="{Binding Profiles}" ItemTemplate="{StaticResource ProfileCard}" />
+            <Border Classes="lens" Padding="16,12" IsVisible="{Binding NoProfilesVisible}">
+                <TextBlock Foreground="{DynamicResource FgMuted}" Classes="body" TextWrapping="Wrap"
+                           Text="Un perfil le dice a Arkko cómo leer las tareas de un panel. La app no trae ninguno: importa el de tu panel para poder conectarlo." />
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <Button Theme="{StaticResource ChipButton}" Click="ImportProfile_Click" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Importar perfil" />
+                    </StackPanel>
+                </Button>
+                <Button Theme="{StaticResource ChipButton}" Click="Help_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE897;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="Cómo se hace un perfil" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- IMPORTAR: se pega el perfil y se comprueba mientras se escribe -->
+        <Border Classes="lens" Padding="16,12" Margin="0,0,0,16" IsVisible="{Binding ImportVisible}">
+            <StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Content="Cómo se hace un perfil" Click="Help_Click" VerticalAlignment="Top" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Classes="settingName" Text="Importar un perfil" FontSize="14" />
+                        <TextBlock Classes="settingHint" Text="Pega aquí el perfil de tu panel, o cárgalo de un fichero." />
+                    </StackPanel>
+                </DockPanel>
+                <TextBox Classes="field" Margin="0,12,0,0" Height="280" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+                         VerticalAlignment="Stretch" VerticalContentAlignment="Top" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto" Text="{Binding ImportText, Delay=400}" />
+                <TextBlock Text="{Binding ImportStatus}" Foreground="{Binding ImportBrush}" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="11" />
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button Theme="{StaticResource PrimaryButton}" Content="Guardar perfil" Click="SaveProfile_Click" IsEnabled="{Binding CanSaveProfile}" Margin="0,0,12,0" />
+                    <Button Theme="{StaticResource ChipButton}" Content="Cargar de un fichero…" Click="LoadProfileFile_Click" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Button Theme="{StaticResource ChipButton}" Content="Cancelar" Click="CancelImport_Click" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- AYUDA: qué es un perfil, qué necesita, una plantilla y el texto para pedírselo a Claude -->
+        <Border Classes="lens" Padding="16,12" Margin="0,0,0,16" IsVisible="{Binding HelpVisible}">
+            <StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Content="Cerrar" Click="Help_Click" VerticalAlignment="Top" />
+                    <TextBlock Classes="settingName" Text="Cómo se hace un perfil" FontSize="14" />
+                </DockPanel>
+                <TextBlock Classes="body" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{DynamicResource FgMuted}"
+                           Text="Un perfil le dice a Arkko cómo leer las tareas de un panel: dónde está, cómo se identifica uno, qué llamadas hacer a su API y qué es cada dato. La app solo lee: no crea, mueve ni comenta nada en el panel." />
+                <TextBlock Classes="settingName" Text="1. Pídeselo a quien administra el panel" Margin="0,12,0,0" />
+                <TextBlock Classes="settingHint" TextWrapping="Wrap" Text="En tu empresa puede que ya esté hecho. Si es así, solo hay que pegarlo en «Importar perfil»." />
+                <TextBlock Classes="settingName" Text="2. O escríbelo con la documentación de la API" Margin="0,12,0,0" />
+                <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                           Text="Necesita cinco cosas: la dirección del servidor; cómo se identifica uno (un token Bearer, usuario y token, o una cabecera propia); las llamadas que devuelven los proyectos, sus subtableros y sus tareas, y cómo se pide la página siguiente; qué campo de una tarea es cada dato (clave, título, estado…); y a qué columna de la app va cada estado. La plantilla de abajo lo tiene todo, con un comentario en cada parte." />
+                <TextBlock Classes="settingName" Text="3. O pídeselo a Claude Code" Margin="0,12,0,0" />
+                <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                           Text="Copia el texto para Claude, añade al final la documentación o el OpenAPI de tu panel, y pega aquí lo que te devuelva. Revisa que solo use llamadas de lectura." />
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,8">
+                    <Button Theme="{StaticResource ChipButton}" Content="Copiar la plantilla" Click="CopyTemplate_Click" Margin="0,0,8,0" />
+                    <Button Theme="{StaticResource ChipButton}" Content="Copiar el texto para Claude" Click="CopyPrompt_Click" />
+                    <TextBlock Text="{Binding CopyNote}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0" />
+                </StackPanel>
+                <TextBox Classes="field" Text="{Binding Template, Mode=OneWay}" IsReadOnly="True" Height="260" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto" FontFamily="{StaticResource MonoFont}" FontSize="11" />
+            </StackPanel>
+        </Border>
+
+        <!-- CONEXIONES: una ficha por panel; al editar una, su ficha da paso al editor -->
+        <TextBlock Classes="menuLabel" Text="CONEXIONES" Margin="2,0,0,8" />
+        <StackPanel IsVisible="{Binding ListVisible}">
+            <ItemsControl ItemsSource="{Binding Connections}" ItemTemplate="{StaticResource ConnectionCard}" />
+            <Border Classes="lens" Padding="16,12" IsVisible="{Binding EmptyVisible}">
+                <TextBlock Foreground="{DynamicResource FgMuted}" Classes="body" TextWrapping="Wrap"
+                           Text="Conecta Arkko con el tablero de tareas con el que trabajas para ver sus tareas junto a las sesiones que las desarrollan. La app solo lee: no crea, mueve ni comenta nada." />
+            </Border>
+            <TextBlock Text="{Binding AddNote}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="2,0,0,8" IsVisible="{Binding AddNoteVisible}" />
+            <Button Theme="{StaticResource ChipButton}" HorizontalAlignment="Left" Click="Add_Click" Margin="0,0,0,16" IsEnabled="{Binding CanAdd}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE710;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="Añadir conexión" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- EDITOR DE UNA CONEXIÓN: cada cambio se guarda al momento -->
+        <StackPanel IsVisible="{Binding EditorVisible}">
+            <Border Classes="lens" Padding="16,12" DataContext="{Binding Editor}" x:DataType="local:ConnectionEditor">
+                <StackPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Theme="{StaticResource PrimaryButton}" Content="Listo" Click="Done_Click" VerticalAlignment="Top" />
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Classes="settingName" Text="{Binding ProfileName}" FontSize="14" />
+                            <TextBlock Classes="settingHint" Text="Los cambios se guardan solos." />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Nombre y color: distinguen esta conexión de otras, también de otro panel igual -->
+                    <DockPanel Margin="0,16,0,8">
+                        <TextBox DockPanel.Dock="Right" Width="320" Classes="field" MaxLength="40" Text="{Binding Name, Delay=500}" />
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Classes="settingName" Text="Nombre" />
+                            <TextBlock Classes="settingHint" Text="Cómo se llama en el Tablero, junto a su color." />
+                        </StackPanel>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Palette}" HorizontalAlignment="Right" Margin="0,0,0,8">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:ColorChoice">
+                                <Border Width="22" Height="22" CornerRadius="11" Margin="8,0,0,0" Cursor="Hand" BorderThickness="2" Background="Transparent"
+                                        BorderBrush="{Binding Ring}" PointerReleased="Color_Click" ToolTip.Tip="{Binding Hex}">
+                                    <Ellipse Width="14" Height="14" Fill="{Binding Brush}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,4" />
+
+                    <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource SettingFieldRow}" />
+                    <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,4" />
+
+                    <!-- PROBAR: primero el certificado del servidor, después la clave -->
+                    <DockPanel Margin="0,12,0,4">
+                        <Button DockPanel.Dock="Left" Theme="{StaticResource PrimaryButton}" Content="Probar conexión" Click="Test_Click"
+                                IsEnabled="{Binding CanTest}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding TestText}" Foreground="{Binding TestBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="16,0,0,0" />
+                    </DockPanel>
+
+                    <!-- CERTIFICADO que el equipo no reconoce: se enseña para confiar en él a conciencia -->
+                    <Border IsVisible="{Binding CertificateVisible}" Margin="0,12,0,0" Padding="12,10" CornerRadius="{DynamicResource RadiusS}"
+                            Background="{DynamicResource ButtonFill}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding CertificateTitle}" FontWeight="SemiBold" />
+                            <TextBlock Classes="settingHint" Text="{Binding CertificateHint}" TextWrapping="Wrap" />
+                            <Grid Margin="0,8,0,0" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <TextBlock Text="Para" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,2,16,2" />
+                                <TextBlock Grid.Column="1" Text="{Binding CertificateSubject}" Classes="mono" Margin="0,2" />
+                                <TextBlock Grid.Row="1" Text="Firmado por" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,2,16,2" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CertificateIssuer}" Classes="mono" Margin="0,2" />
+                                <TextBlock Grid.Row="2" Text="Caduca" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,2,16,2" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CertificateExpiry}" Margin="0,2" FontSize="11" />
+                                <TextBlock Grid.Row="3" Text="Huella SHA-256" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,2,16,2" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CertificateFingerprint}" Classes="mono" Margin="0,2" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Theme="{StaticResource ChipButton}" Content="Confiar en este certificado" Click="TrustCertificate_Click" Margin="0,0,8,0"
+                                        IsVisible="{Binding TrustButtonsVisible}" />
+                                <Button Theme="{StaticResource ChipButton}" Content="Usar un certificado raíz…" Click="TrustRoot_Click" Margin="0,0,8,0"
+                                        IsVisible="{Binding TrustButtonsVisible}" />
+                                <Button Theme="{StaticResource ChipButton}" Content="Dejar de confiar" Click="Untrust_Click" IsVisible="{Binding UntrustVisible}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- QUÉ SE VE: tras una prueba buena, sus proyectos; encendido uno, el proyecto entero o sus subtableros -->
+                    <StackPanel IsVisible="{Binding ProjectsVisible}" Margin="0,16,0,0">
+                        <TextBlock Classes="settingName" Text="Qué se ve en el Tablero" />
+                        <TextBlock Classes="settingHint" Text="Enciende un proyecto y elige si se ve entero o solo algunos de sus subtableros." />
+                        <ItemsControl ItemsSource="{Binding Projects}" ItemTemplate="{StaticResource ProjectChoiceRow}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- COLOR DE UN SUBTABLERO: cuelga de su punto y se cierra al pulsar fuera -->
+        <Popup Name="SubBoardColorPopup" Placement="BottomEdgeAlignedLeft" VerticalOffset="6" IsLightDismissEnabled="True">
+            <Border Padding="12" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}"
+                    BorderThickness="1" BoxShadow="0 3 14 0 #38000000" Margin="0,0,10,10">
+                <StackPanel>
+                    <local:ColorPicker Name="SubBoardPicker" />
+                    <Button Theme="{StaticResource ChipButton}" Content="Volver al color del panel" HorizontalAlignment="Left" Margin="0,10,0,0"
+                            Click="SubBoardColorReset_Click" ToolTip.Tip="El que da el panel o, si no da ninguno, el que pone la app" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- VISTA DEL TABLERO: cómo se ve el subtablero de cada tarea -->
+        <TextBlock Classes="menuLabel" Text="VISTA DEL TABLERO" Margin="2,16,0,8" />
+        <Border Classes="lens" Padding="16,8">
+            <DockPanel Margin="0,8">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="BoardStyle" Content="Franja" IsChecked="{Binding IsStripe}" Margin="0,0,6,0"
+                                 ToolTip.Tip="Franja ancha con el nombre del subtablero; marcada, en su color" />
+                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="BoardStyle" Content="Discreto" IsChecked="{Binding IsSubtle}" Margin="0,0,6,0"
+                                 ToolTip.Tip="Borde fino y el subtablero como pastilla; marcada, en el color de la app" />
+                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="BoardStyle" Content="Carriles" IsChecked="{Binding IsLanes}" Margin="0"
+                                 ToolTip.Tip="Una fila por subtablero cuando se ven todos" />
+                </StackPanel>
+                <StackPanel Margin="0,0,16,0">
+                    <TextBlock Classes="settingName" Text="Subtablero de cada tarea" />
+                    <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                               Text="Con el proyecto entero a la vista, cómo se distingue de qué subtablero es cada tarea: una franja con su nombre, un borde fino con su nombre como pastilla, o una fila por subtablero." />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- TAREA DE UNA SESIÓN: cómo se encuentra su clave en la rama o el worktree -->
+        <TextBlock Classes="menuLabel" Text="TAREA DE UNA SESIÓN" Margin="2,16,0,8" />
+        <Border Classes="lens" Padding="16,8">
+            <StackPanel>
+                <DockPanel Margin="0,8">
+                    <TextBox DockPanel.Dock="Right" Width="320" Classes="field" FontFamily="{StaticResource MonoFont}" Text="{Binding TaskPattern, Delay=500}" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Classes="settingName" Text="Patrón de la clave" />
+                        <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                   Text="Expresión regular que busca la clave de la tarea en el nombre de la rama o de la carpeta del worktree. Por defecto, claves como DEVLAB-99." />
+                    </StackPanel>
+                </DockPanel>
+                <TextBlock Text="{Binding PatternText}" Foreground="{Binding PatternBrush}" FontSize="11" HorizontalAlignment="Right" Margin="0,0,0,8" />
+                <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,4" />
+                <DockPanel Margin="0,8">
+                    <TextBox DockPanel.Dock="Right" Width="320" Classes="field" FontFamily="{StaticResource MonoFont}" Text="{Binding TaskSwitch, Delay=500}" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Classes="settingName" Text="Prompt que añade una tarea a la sesión" />
+                        <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                   Text="Una sesión puede trabajar en varias tareas. Un prompt cuya primera línea cumple esta regla y lleva una clave le añade esa tarea; su coste sigue en la principal, la de su carpeta. Por defecto, un comando con barra: «/opsx:apply DEVLAB-87». Vacía, se apaga. Mencionar una clave no la añade: si sale en tres prompts o más de una sesión con tarea, y es del mismo proyecto, se sugiere. A mano, se añaden y quitan en la tarjeta de la sesión, la barra de Sesiones o el detalle de una tarea." />
+                    </StackPanel>
+                </DockPanel>
+                <TextBlock Text="{Binding SwitchText}" Foreground="{Binding SwitchBrush}" FontSize="11" HorizontalAlignment="Right" Margin="0,0,0,8" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

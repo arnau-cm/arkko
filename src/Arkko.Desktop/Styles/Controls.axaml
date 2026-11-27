@@ -1,0 +1,337 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="using:Arkko.Desktop">
+    <!-- Plantillas de los controles propios de la app, como Theme="{StaticResource …}": el equivalente de los
+         estilos con clave de la ventana de WPF que cambian la plantilla. -->
+
+    <!-- CABECERA PLEGABLE: flecha que gira y título de sección -->
+    <ControlTheme x:Key="SectionToggle" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="2,8,0,8" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Orientation="Horizontal" Background="{TemplateBinding Background}">
+                    <TextBlock Name="Chevron" Classes="icon" Text="&#xE70D;" FontSize="8" VerticalAlignment="Center" Margin="0,1,8,0" />
+                    <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" FontSize="10" FontWeight="SemiBold" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:unchecked /template/ TextBlock#Chevron">
+            <Setter Property="RenderTransform" Value="rotate(-90deg)" />
+        </Style>
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+        </Style>
+    </ControlTheme>
+
+    <!-- CHIPS: pastillas de cristal; encendidas, con el granate de la app -->
+    <ControlTheme x:Key="ChipToggle" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="12,4" Background="{DynamicResource ButtonFill}"
+                        BorderBrush="{DynamicResource LensEdge}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+        <Style Selector="^:checked">
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        </Style>
+        <Style Selector="^:checked /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+        </Style>
+        <Style Selector="^:disabled /template/ Border#B">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="ChipRadio" TargetType="RadioButton" BasedOn="{StaticResource ChipToggle}" />
+
+    <!-- OPCIÓN DE MENÚ: una fila que se marca, con fondo al pasar el ratón y el de un chip encendido la elegida -->
+    <ControlTheme x:Key="MenuChoice" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusS}" Padding="6,4" Margin="0,1" Background="Transparent">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+        <Style Selector="^:checked /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+        </Style>
+    </ControlTheme>
+
+    <!-- FICHA DE ELECCIÓN: una tarjeta con su muestra y su texto; la elegida, con el borde y el fondo de un chip encendido -->
+    <ControlTheme x:Key="ChoiceTile" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="10" Background="{DynamicResource ButtonFill}"
+                        BorderBrush="{DynamicResource LensEdge}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+        <Style Selector="^:checked /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Padding" Value="9" />
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="ChipButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="12,4" Background="{DynamicResource ButtonFill}"
+                        BorderBrush="{DynamicResource LensEdge}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+        <Style Selector="^:disabled /template/ Border#B">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+    </ControlTheme>
+
+    <!-- BOTÓN PRINCIPAL: relleno en el color del texto, para destacar sin usar el acento -->
+    <ControlTheme x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="16,8" Background="{DynamicResource PrimaryFill}">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Opacity" Value="0.85" />
+        </Style>
+        <Style Selector="^:disabled /template/ Border#B">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+    </ControlTheme>
+
+    <!-- INTERRUPTOR: pista redondeada con una bola que se desliza -->
+    <ControlTheme x:Key="Switch" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="Track" Width="36" Height="20" CornerRadius="10" Background="{DynamicResource TrackFill}"
+                        BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1">
+                    <Ellipse Name="Knob" Width="14" Height="14" Margin="2,0" HorizontalAlignment="Left" Fill="{DynamicResource FgMuted}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:checked /template/ Border#Track">
+            <Setter Property="Background" Value="{DynamicResource SwitchOn}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SwitchOn}" />
+        </Style>
+        <Style Selector="^:checked /template/ Ellipse#Knob">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Fill" Value="White" />
+        </Style>
+        <Style Selector="^:disabled /template/ Border#Track">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+    </ControlTheme>
+
+    <!-- BOTONES DE LA BARRA: gotas de cristal con un glifo -->
+    <ControlTheme x:Key="BarButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Margin" Value="3,0" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="9" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource ButtonFill}"
+                        BorderBrush="{DynamicResource LensEdge}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="CloseButton" TargetType="Button" BasedOn="{StaticResource BarButton}">
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource Danger}" />
+        </Style>
+    </ControlTheme>
+
+    <!-- BOTÓN DE LA CABECERA DE UN RECUADRO: un cuadrado redondeado sin borde, más pequeño que la cabecera, con aire
+         arriba y abajo -->
+    <ControlTheme x:Key="HeadButton" TargetType="Button" BasedOn="{StaticResource BarButton}">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="7" Background="{DynamicResource ButtonFill}">
+                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="HeadCloseButton" TargetType="Button" BasedOn="{StaticResource HeadButton}">
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource Danger}" />
+        </Style>
+    </ControlTheme>
+
+    <!-- TÍTULO DE UN MENÚ: solo su texto, alineado con los iconos de debajo. El elemento de menú del tema reserva a la
+         izquierda la columna del icono, también en un título que no lo lleva, y lo dejaba desplazado -->
+    <ControlTheme x:Key="MenuCaption" TargetType="MenuItem">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter Content="{TemplateBinding Header}" Padding="{TemplateBinding Padding}" Background="Transparent" />
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+    <!-- BOTÓN SIN ASPECTO: hace pulsable una tarjeta o una fila entera sin cambiar cómo se ve -->
+    <ControlTheme x:Key="PlainButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                  Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+    <!-- BOTONES DE ACCIÓN del detalle de Seguridad y Tokens: grandes y legibles -->
+    <ControlTheme x:Key="ActionButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,0,8,8" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="14,7" Background="{DynamicResource ButtonFill}"
+                        BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+        </Style>
+    </ControlTheme>
+    <!-- «Ya rotado», «Ya lo he cambiado» y «Crear»: borde y texto del verde de lo hecho -->
+    <ControlTheme x:Key="ActionDone" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+        <Setter Property="Foreground" Value="{x:Static local:SecurityModel.DoneBrush}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Padding="14,7" Background="Transparent"
+                        BorderBrush="{x:Static local:SecurityModel.DoneBrush}" BorderThickness="1">
+                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#B">
+            <Setter Property="Background" Value="{x:Static local:SecurityModel.DoneFill}" />
+        </Style>
+    </ControlTheme>
+
+    <!-- BARRA DE LÍMITE: tubo de cristal con relleno líquido y brillo. Avalonia ajusta el ancho de PART_Indicator. -->
+    <ControlTheme x:Key="LimitProgress" TargetType="ProgressBar">
+        <Setter Property="Height" Value="10" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <Border CornerRadius="5" Background="{DynamicResource TrackFill}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" />
+                    <Border Name="PART_Indicator" HorizontalAlignment="Left" Margin="1" CornerRadius="4" Background="{TemplateBinding Foreground}">
+                        <Border CornerRadius="4,4,0,0" Height="4" VerticalAlignment="Top" Margin="2,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                    <GradientStop Color="#4DFFFFFF" Offset="0" />
+                                    <GradientStop Color="#00FFFFFF" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                    </Border>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+    <!-- BARRA SIN CARRIL: solo el relleno, para apilar varias sobre un mismo carril -->
+    <ControlTheme x:Key="BareProgress" TargetType="ProgressBar">
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <Border Name="PART_Indicator" HorizontalAlignment="Left" Margin="1" CornerRadius="4" Background="{TemplateBinding Foreground}">
+                        <Border CornerRadius="4,4,0,0" Height="4" VerticalAlignment="Top" Margin="2,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                    <GradientStop Color="#4DFFFFFF" Offset="0" />
+                                    <GradientStop Color="#00FFFFFF" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                    </Border>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+</ResourceDictionary>

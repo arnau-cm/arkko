@@ -1,0 +1,52 @@
+﻿<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.App"
+             RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Un diccionario por tema: al cambiar RequestedThemeVariant, todo lo que usa DynamicResource se repinta solo. -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude x:Key="Dark" Source="/Themes/Dark.axaml" />
+                <ResourceInclude x:Key="Light" Source="/Themes/Light.axaml" />
+                <!-- Los propios heredan del oscuro: lo que no tienen lo buscan en él -->
+                <ResourceInclude x:Key="{x:Static local:App.SolidVariant}" Source="/Themes/Solid.axaml" />
+                <ResourceInclude x:Key="{x:Static local:App.BrandVariant}" Source="/Themes/Brand.axaml" />
+                <ResourceInclude x:Key="{x:Static local:App.TerminalVariant}" Source="/Themes/Terminal.axaml" />
+            </ResourceDictionary.ThemeDictionaries>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Styles/Controls.axaml" />
+                <ResourceInclude Source="/Templates/Shared.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- ESCALA DE RADIOS: la misma que la ventana de WPF. L, la carcasa de una ventana; M, una tarjeta,
+                 una ficha o un botón; S, una fila, una cabecera o un chip; XS, un resalte dentro de una gráfica. Va en cada tema,
+                 para que el de terminal la deje en cero. -->
+
+            <!-- TERMINAL: la vista previa de la barra de estado es siempre oscura, también con el tema claro. -->
+            <SolidColorBrush x:Key="TerminalBack" Color="#0D1117" />
+            <SolidColorBrush x:Key="TerminalEdge" Color="#30363D" />
+            <SolidColorBrush x:Key="TerminalText" Color="#C9D1D9" />
+
+            <!-- TIPOS DE LETRA: el de Windows primero; en macOS y Linux, Inter, que va dentro de la app. Segoe UI y no
+                 Segoe UI Variable: Avalonia no aplica el peso de una fuente variable y engorda la letra para la seminegrita.
+                 Los iconos son glifos de Segoe: fuera de Windows no se ven hasta tener su fuente propia. La de la interfaz,
+                 UiFont, va en cada tema, para que el de terminal la cambie. -->
+            <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+            <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</FontFamily>
+
+            <!-- LETRA DE LOS CONTROLES DEL TEMA: 12 y la de la app, como en la de WPF. El tema la pone en los menús, los
+                 campos de texto y la capa propia de cada desplegable (menú contextual, panel de la pastilla, calendario),
+                 que no heredan la de su ventana; sin esto salen a 14 y en otra letra. La letra, ContentControlThemeFontFamily,
+                 va en cada tema, como UiFont. -->
+            <x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="/Styles/Text.axaml" />
+        <StyleInclude Source="/Styles/Templates.axaml" />
+    </Application.Styles>
+</Application>

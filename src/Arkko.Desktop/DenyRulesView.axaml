@@ -1,0 +1,82 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.DenyRulesView"
+             x:DataType="local:DenyRulesModel">
+    <UserControl.Resources>
+        <!-- Un tipo de fichero: nombre, por qué, sus reglas en pequeño y el interruptor -->
+        <DataTemplate x:Key="DenyRow" x:DataType="local:DenyRow">
+            <DockPanel Margin="0,8">
+                <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding IsOn}" IsEnabled="{Binding CanChange}"
+                              VerticalAlignment="Center" ToolTip.Tip="{Binding SwitchTip}" ToolTip.ShowOnDisabled="True" />
+                <StackPanel Margin="0,0,16,0">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Why}" Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    <TextBlock Text="{Binding RulesText}" Foreground="{DynamicResource FgFaint}" Classes="caption"
+                               FontFamily="{StaticResource MonoFont}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <!-- AVISOS DE SECRETOS: en el momento, desde los hooks de Claude Code -->
+        <TextBlock Classes="menuLabel" Text="AVISOS DE SECRETOS" Margin="2,0,0,8" />
+        <Border Classes="lens" Padding="16,8" Margin="0,0,0,16">
+            <StackPanel>
+                <DockPanel Margin="0,8">
+                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding AlertsOn}" VerticalAlignment="Center" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Avisar en el momento" FontWeight="SemiBold" />
+                        <TextBlock Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="Cuando Claude lee, escribe o recibe un secreto, una línea en la propia sesión, una notificación y un escudo rojo en su tarjeta." />
+                    </StackPanel>
+                </DockPanel>
+                <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,2" />
+                <DockPanel Margin="0,8">
+                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding BlockOn}" VerticalAlignment="Center" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Frenar prompts con secretos" FontWeight="SemiBold" />
+                        <TextBlock Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="Si pegas un secreto en un prompt, no se envía y Claude Code te dice por qué. Lo que Claude lee con sus herramientas no se puede frenar: cuando el aviso llega, ya está enviado." />
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- VULNERABILIDADES: la comprobación de seguridad de arkko-stack -->
+        <TextBlock Classes="menuLabel" Text="VULNERABILIDADES" Margin="2,0,0,8" />
+        <Border Classes="lens" Padding="16,8" Margin="0,0,0,16">
+            <StackPanel>
+                <DockPanel Margin="0,8">
+                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding StackAutoOn}" VerticalAlignment="Center" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Comprobar solo, en segundo plano" FontWeight="SemiBold" />
+                        <TextBlock Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="Arkko lanza la comprobación de arkko-stack cuando se queda vieja: los avisos, cada día, y tu equipo y tus repos, cada 7 días. Sale a internet a leer fuentes públicas y pasa npm audit y dotnet list package en tus repos. Los botones de la sección funcionan siempre." />
+                    </StackPanel>
+                </DockPanel>
+                <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,2" />
+                <DockPanel Margin="0,8">
+                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding StackAlertsOn}" VerticalAlignment="Center" />
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Avisar de vulnerabilidades" FontWeight="SemiBold" />
+                        <TextBlock Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="Una notificación cuando hay algo nuevo que actualizar, un aviso de seguridad por revisar, la comprobación se queda vieja o no termina. Solo de lo nuevo, una vez." />
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Classes="menuLabel" Text="QUÉ NO PUEDE LEER CLAUDE" Margin="2,0,0,8" />
+        <Border Classes="lens" Padding="16,12">
+            <StackPanel>
+                <TextBlock Foreground="{DynamicResource FgMuted}" Classes="body" TextWrapping="Wrap" Margin="0,0,0,4"
+                           Text="Activa los ficheros que Claude Code no debe leer, buscar ni editar, en todas sus sesiones." />
+                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DenyRow}" />
+                <!-- Cada interruptor se guarda al momento; aquí se confirma -->
+                <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource FgFaint}" Classes="label" TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

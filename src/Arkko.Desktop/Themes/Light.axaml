@@ -1,0 +1,103 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- TEMA CLARO: cristal esmerilado gris perla, con tarjetas más claras que la base -->
+    <FontFamily x:Key="UiFont">Segoe UI, fonts:Inter#Inter</FontFamily>
+    <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI, fonts:Inter#Inter</FontFamily>
+    <CornerRadius x:Key="RadiusXS">4</CornerRadius>
+    <CornerRadius x:Key="RadiusS">8</CornerRadius>
+    <CornerRadius x:Key="RadiusM">12</CornerRadius>
+    <CornerRadius x:Key="RadiusL">16</CornerRadius>
+    <SolidColorBrush x:Key="Scanlines" Color="Transparent" />
+    <SolidColorBrush x:Key="Fg" Color="#1C1E24" />
+    <SolidColorBrush x:Key="FgStrong" Color="#1C1E24" />
+    <SolidColorBrush x:Key="FgTitle" Color="#1C1E24" />
+    <SolidColorBrush x:Key="FgMuted" Color="#4F5461" />
+    <SolidColorBrush x:Key="FgFaint" Color="#6E7383" />
+    <SolidColorBrush x:Key="FgLabel" Color="#4F5461" />
+    <SolidColorBrush x:Key="Accent" Color="#D97757" />
+
+    <LinearGradientBrush x:Key="GlassBase" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#FDE6E9EF" Offset="0" />
+        <GradientStop Color="#FDDCE0E8" Offset="0.55" />
+        <GradientStop Color="#FED1D6E0" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- Borde especular: blanco puro arriba a la izquierda, sombra suave abajo a la derecha. -->
+    <!-- En claro, borde gris en todo el contorno: un reflejo blanco no se distingue del fondo. -->
+    <LinearGradientBrush x:Key="GlassEdge" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#24000000" Offset="0" />
+        <GradientStop Color="#1C000000" Offset="0.5" />
+        <GradientStop Color="#2E000000" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="Sheen" StartPoint="0%,0%" EndPoint="60%,80%">
+        <GradientStop Color="#66FFFFFF" Offset="0" />
+        <GradientStop Color="#00FFFFFF" Offset="0.45" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="LensFill" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Color="#C7FFFFFF" Offset="0" />
+        <GradientStop Color="#8CF7F9FC" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="LensEdge" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#1F000000" Offset="0" />
+        <GradientStop Color="#17000000" Offset="0.5" />
+        <GradientStop Color="#26000000" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="ButtonFill" Color="#99FFFFFF" />
+    <SolidColorBrush x:Key="ButtonHover" Color="#FFFFFFFF" />
+    <!-- Panel de un submenú, como las categorías de la configuración: hundido, más oscuro que el
+         contenido, para no confundirse con el menú lateral, que es más claro. -->
+    <SolidColorBrush x:Key="SubNavFill" Color="#121C1E24" />
+    <SolidColorBrush x:Key="TrackFill" Color="#14000000" />
+    <SolidColorBrush x:Key="TrackEdge" Color="#1A000000" />
+    <SolidColorBrush x:Key="ThumbFill" Color="#29000000" />
+    <SolidColorBrush x:Key="ThumbHover" Color="#4D000000" />
+    <SolidColorBrush x:Key="RingInner" Color="#0A000000" />
+    <SolidColorBrush x:Key="RingTrack" Color="#1F000000" />
+    <!-- Chip elegido e interruptor encendido: el granate propio de la app, a propósito distinto de Danger. -->
+    <SolidColorBrush x:Key="ChipOn" Color="#2686050D" />
+    <SolidColorBrush x:Key="ChipOnEdge" Color="#86050D" />
+    <SolidColorBrush x:Key="PrimaryFill" Color="#1C1E24" />
+    <SolidColorBrush x:Key="PrimaryText" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SwitchOn" Color="#86050D" />
+    <SolidColorBrush x:Key="TipFill" Color="#F8FFFFFF" />
+    <SolidColorBrush x:Key="TipEdge" Color="#26000000" />
+    <!-- El submenú de un menú del clic derecho sale en su propia ventana emergente, con los colores de serie: se le dan los del menú -->
+    <StaticResource x:Key="MenuFlyoutPresenterBackground" ResourceKey="TipFill" />
+    <StaticResource x:Key="MenuFlyoutPresenterBorderBrush" ResourceKey="TipEdge" />
+    <StaticResource x:Key="OverlayCornerRadius" ResourceKey="RadiusM" />
+
+    <!-- TAREAS: cada columna es un carril hundido y sus tarjetas van encima, casi opacas, para que el
+         texto no dependa de lo que se vea a través del cristal. -->
+    <SolidColorBrush x:Key="TaskLane" Color="#121C1E24" />
+    <SolidColorBrush x:Key="TaskCardFill" Color="#F7FFFFFF" />
+    <SolidColorBrush x:Key="TaskCardEdge" Color="#1F000000" />
+    <SolidColorBrush x:Key="TaskCardHoverEdge" Color="#47000000" />
+    <!-- Bloque del detalle de una tarea, para separar datos, sesiones y descripción sobre la tarjeta -->
+    <SolidColorBrush x:Key="TaskSection" Color="#0F1C1E24" />
+
+    <!-- Rojo de peligro o atención: contador, tarjetas sin revisar, espera urgente, papelera, botón
+         de cerrar, «Pendiente» de Seguridad y errores. En claro, más oscuro, para que se lea como
+         texto sobre el gris perla. -->
+    <SolidColorBrush x:Key="Danger" Color="#D2383E" />
+    <!-- Rojo de lo crítico, por encima de Danger: el relleno de la pastilla «Crítica» de Vulnerabilidades, con letra blanca. -->
+    <SolidColorBrush x:Key="DangerStrong" Color="#8E1B24" />
+
+    <!-- COLOR DE LOS DATOS: modelos y series de las gráficas. Mismo tono que en el tema oscuro, con el
+         brillo bajado y algo más de saturación, para que se lean sobre el gris perla: los valores del
+         tema oscuro se quedaban entre 1,3 y 1,8 de contraste, y estos llegan a 3. Los tres cálidos
+         llevan más saturación que el resto porque un amarillo o un naranja, al oscurecerse, se
+         convierte en barro. -->
+    <SolidColorBrush x:Key="DataOpus" Color="#C7633A" />
+    <SolidColorBrush x:Key="DataSonnet" Color="#3A84C2" />
+    <SolidColorBrush x:Key="DataHaiku" Color="#608B41" />
+    <SolidColorBrush x:Key="DataFable" Color="#B15DCA" />
+    <SolidColorBrush x:Key="DataOther" Color="#7A808B" />
+    <SolidColorBrush x:Key="DataCache" Color="#348B96" />
+    <SolidColorBrush x:Key="DataFiveHour" Color="#A57723" />
+    <SolidColorBrush x:Key="DataSevenDay" Color="#348B96" />
+    <SolidColorBrush x:Key="DataOtherLimit" Color="#B15DCA" />
+</ResourceDictionary>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <!-- Solo lo propio: ni scripts, ni estilos, ni conexiones de fuera -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sesiones</title>
+    <link rel="stylesheet" href="sesiones.css">
+    <link rel="stylesheet" href="diagrama.css">
+    <link rel="stylesheet" href="ahora.css">
+    <link rel="stylesheet" href="parte.css">
+    <link rel="stylesheet" href="obra.css">
+</head>
+<body>
+    <main class="app">
+        <!-- ACTIVAS: las sesiones abiertas ahora, agrupadas por repositorio; se pliega a una tira de gotas -->
+        <aside class="active lens" id="active">
+            <div class="active-head">
+                <span class="active-title">Sesiones activas <span id="active-count" class="active-count"></span></span>
+                <button class="pbtn small" id="active-fold" title="Plegar el panel">⇤</button>
+            </div>
+            <button class="pbtn small group-step" id="active-up" title="Grupo anterior" hidden>▲</button>
+            <div id="active-list" class="scroll active-list"></div>
+            <button class="pbtn small group-step" id="active-down" title="Grupo siguiente" hidden>▼</button>
+        </aside>
+
+        <section class="work">
+            <!-- BARRA SUPERIOR, en una fila y por zonas: la sesión que se ve y su contexto, interacciones y repetición, pestañas y buscador -->
+            <header class="toolbar">
+                <div class="toolbar-row topbar">
+                    <button id="toggle-lists" class="pbtn lists-btn" title="Sesiones e interacciones">☰</button>
+                    <div class="session-title" id="session-title"></div>
+                    <span class="ctx-ring" id="session-context" hidden></span>
+                    <span class="closed-pill" id="session-closed" hidden></span>
+                    <span class="task-chips" id="session-tasks" hidden></span>
+                    <button class="secret-pill" id="session-secrets" title="Secretos de esta sesión aún sin rotar ni descartar" hidden></button>
+                    <button class="art-pill" id="session-artifacts" hidden></button>
+                    <span class="vsep"></span>
+                    <div class="player" id="player">
+                        <div class="inter-nav">
+                            <button class="chip" id="all-btn" title="Toda la sesión">Todo</button>
+                            <button class="pbtn small" id="prev" title="Interacción anterior">◂</button>
+                            <span id="inter-number" class="inter-num"></span>
+                            <button class="pbtn small" id="next" title="Interacción siguiente">▸</button>
+                        </div>
+                        <span class="vsep"></span>
+                        <button class="pbtn" id="p-first" title="Al principio (Inicio)">⏮</button>
+                        <button class="pbtn" id="p-prev" title="Paso anterior (←)">◂</button>
+                        <button class="pbtn play" id="p-play" title="Reproducir (espacio)">▶</button>
+                        <button class="pbtn" id="p-next" title="Paso siguiente (→)">▸</button>
+                        <button class="pbtn" id="p-last" title="Al final (Fin)">⏭</button>
+                        <input id="p-range" class="prange" type="range" min="0" max="0" value="0" title="Ir a un paso">
+                        <span id="p-label" class="plabel">Repetir la interacción</span>
+                        <div class="segmented speeds" id="speeds">
+                            <button class="chip on" data-speed="1">1×</button>
+                            <button class="chip" data-speed="2">2×</button>
+                            <button class="chip" data-speed="4">4×</button>
+                        </div>
+                        <button class="pbtn" id="p-exit" title="Salir de la repetición (Esc)">✕</button>
+                    </div>
+                    <span class="vsep"></span>
+                    <!-- La vista de la sesión, con el dibujo de la que se ve: abre el desplegable con todas -->
+                    <button class="chip view-btn" id="view-btn"><svg class="view-icon" viewBox="0 0 16 16" aria-hidden="true"><path /></svg>Vista<span class="map-caret">▾</span></button>
+                    <div class="finder">
+                        <span class="finder-icon">⌕</span>
+                        <input id="find" class="find" type="search" placeholder="Buscar en la sesión" autocomplete="off" spellcheck="false">
+                        <span id="find-count" class="find-count"></span>
+                        <button class="pbtn small" id="find-prev" title="Coincidencia anterior (Mayús+Intro)">▴</button>
+                        <button class="pbtn small" id="find-next" title="Coincidencia siguiente (Intro)">▾</button>
+                    </div>
+                </div>
+                <div id="legend" class="legend"></div>
+            </header>
+
+            <!-- DIAGRAMA Y CHAT, con un divisor que se arrastra; el chat se puede minimizar -->
+            <div class="panes" id="panes">
+                <div class="lens diagram-pane">
+                    <div id="diagram" class="scroll diagram"></div>
+                    <!-- En el Parte, arriba a la derecha: el resumen por fases o cada paso, que es la Secuencia -->
+                    <div class="parte-mode" id="parte-mode" hidden>
+                        <button type="button" data-mode="summary">Resumen</button>
+                        <button type="button" data-mode="steps">Cada paso</button>
+                    </div>
+                    <!-- Arriba a la derecha, en directo: la rama, lo que falta por subir y lo pendiente, con su lista debajo -->
+                    <div class="flow-git" id="flow-git" hidden>
+                        <button class="flow-git-head" id="flow-git-head"></button>
+                        <div class="flow-git-list" id="flow-git-list" hidden></div>
+                    </div>
+                    <!-- Lienzo en directo: abajo a la derecha, en una barra, cómo va, qué parte enseña, seguir lo que pasa, el
+                         zoom y verlo todo; encima, el aviso de novedades cuando no se sigue. En el diagrama, la barra es una
+                         franja a lo ancho que lleva también la regla de pasos y su escala -->
+                    <div class="flow-dock" id="flow-dock" hidden>
+                        <button class="flow-news" id="flow-news" hidden></button>
+                        <div class="flow-tools">
+                            <span class="flow-status" id="flow-status"><i class="flow-dot"></i><span id="flow-status-text"></span></span>
+                            <span class="flow-sep"></span>
+                            <span class="flow-scope" id="flow-bar">
+                                <span class="segmented">
+                                    <button class="chip" data-scope="current">Prompt</button>
+                                    <button class="chip" data-scope="all">Sesión</button>
+                                </span>
+                                <button class="flow-earlier" id="flow-earlier" hidden></button>
+                            </span>
+                            <span class="dg-only dg-ruler-slot" id="dg-ruler-slot"></span>
+                            <span class="flow-sep dg-only"></span>
+                            <span class="segmented dg-only" id="dg-scale">
+                                <button class="chip" data-far="0">De cerca</button>
+                                <button class="chip" data-far="1">De lejos</button>
+                            </span>
+                            <span class="flow-sep"></span>
+                            <button class="flow-follow" id="flow-follow"><span class="flow-follow-ring"></span>Seguir</button>
+                            <span class="flow-zoom">
+                                <button class="flow-icon-btn" id="flow-zoom-out">−</button>
+                                <button class="flow-zoom-level" id="flow-zoom-level">100 %</button>
+                                <button class="flow-icon-btn" id="flow-zoom-in">+</button>
+                            </span>
+                            <button class="flow-icon-btn" id="flow-fit">⛶</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="splitter" id="splitter"></div>
+                <!-- A la derecha, el chat y, en directo, los cambios de la sesión: abiertos, uno encima del otro con su divisor -->
+                <div class="side" id="side">
+                    <div class="lens chat-pane" id="chat-pane">
+                        <div class="pane-head">
+                            <span class="chat-head-icon" id="chat-head-icon"></span>
+                            <span class="chat-label" id="chat-label">Chat</span>
+                            <div class="pane-tools">
+                                <button class="chip" id="chat-tools">🔧 Herramientas</button>
+                                <button class="pbtn small" id="chat-min" title="Minimizar el chat">⇥</button>
+                            </div>
+                        </div>
+                        <div id="chat" class="scroll chat"></div>
+                        <!-- Vuelve al final del chat; sale al subir y lleva un punto si llega algo nuevo -->
+                        <button class="to-bottom" id="to-bottom" title="Ir al final del chat" hidden>↓</button>
+                    </div>
+                    <div class="side-split" id="side-split"></div>
+                    <div class="lens chat-pane changes-pane" id="changes-pane">
+                        <div class="pane-head">
+                            <span class="chat-head-icon" id="changes-head-icon"></span>
+                            <span class="chat-label" id="changes-label">Cambios</span>
+                            <div class="pane-tools">
+                                <button class="pbtn small" id="changes-min" title="Minimizar los cambios">⇥</button>
+                            </div>
+                        </div>
+                        <!-- Los cambios de la rama y el repositorio entero, cada uno con cuántos ficheros lleva, y la lupa que abre
+                             la paleta de buscar en el repositorio; debajo, el total, con el filtro de lo sin commitear en los
+                             cambios -->
+                        <div class="changes-tabs" id="changes-scope">
+                            <button class="changes-tab-btn" data-cview="changes"></button>
+                            <button class="changes-tab-btn" data-cview="repo"></button>
+                            <button class="changes-find-btn" id="changes-find-btn" aria-label="Buscar en el repositorio"></button>
+                        </div>
+                        <div class="changes-total" id="changes-total"></div>
+                        <div id="changes" class="scroll changes"></div>
+                    </div>
+                </div>
+                <!-- Las pestañas de lo minimizado; con las dos, cada una con media altura -->
+                <div class="side-tabs">
+                    <button class="chat-tab" id="chat-tab" title="Abrir el chat">
+                        <span class="chat-tab-icon"></span>
+                        <span class="chat-tab-label">Chat</span>
+                        <span class="chat-tab-open">⇤</span>
+                    </button>
+                    <button class="chat-tab" id="changes-tab" title="Abrir los cambios">
+                        <span class="chat-tab-icon"></span>
+                        <span class="changes-tab-num" id="changes-tab-num"></span>
+                        <span class="chat-tab-label">Cambios</span>
+                        <span class="chat-tab-open">⇤</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LISTAS: flotan sobre el diagrama, para no quitarle ancho -->
+        <div id="lists" class="lists">
+            <section class="column">
+                <h2 class="label">SESIONES</h2>
+                <div class="lens list-pane">
+                    <div class="filters">
+                        <input id="search" class="search" type="search" placeholder="Buscar en todas por proyecto, título o prompt" autocomplete="off" spellcheck="false">
+                        <div class="period-row">
+                            <div class="chips" id="periods">
+                                <button class="chip" data-period="today">Hoy</button>
+                                <button class="chip" data-period="week">7 días</button>
+                                <button class="chip" data-period="all">Todo</button>
+                            </div>
+                            <button id="day" class="day" title="Solo las sesiones de un día"><span class="day-icon">📅</span><span id="day-label"></span></button>
+                            <button class="pbtn small" id="day-clear" title="Quitar el día">✕</button>
+                        </div>
+                        <!-- CALENDARIO del selector de día; los días fuera del periodo salen apagados -->
+                        <div id="calendar" class="calendar" hidden></div>
+                    </div>
+                    <div id="sessions" class="scroll"></div>
+                </div>
+            </section>
+            <section class="column">
+                <h2 class="label">INTERACCIONES</h2>
+                <div class="lens list-pane">
+                    <div id="session-head" class="session-head"></div>
+                    <div id="interactions" class="scroll"></div>
+                    <div id="all-row" class="all-row"></div>
+                </div>
+            </section>
+        </div>
+        <!-- MENÚ DE COLOR de un grupo de activas, con el clic derecho -->
+        <div id="color-menu" class="color-menu" hidden></div>
+        <div id="view-menu" class="map-menu" hidden></div>
+        <div id="artifact-menu" class="map-menu art-menu" hidden></div>
+
+        <!-- TOOLTIP de las activas: una sesión o la cabecera de un grupo -->
+        <div id="tip" class="tip" hidden></div>
+
+        <!-- VISOR: una imagen del chat a tamaño completo; un clic o Esc lo cierran -->
+        <!-- Visor de imágenes: las de un mismo mensaje, con flechas (y ← →) para pasar; Esc o un clic fuera lo cierran -->
+        <div id="lightbox" class="lightbox" hidden>
+            <button class="lb-nav prev" id="lb-prev" hidden>‹</button>
+            <img id="lightbox-img" alt="">
+            <button class="lb-nav next" id="lb-next" hidden>›</button>
+            <span class="lb-count" id="lb-count" hidden></span>
+        </div>
+    </main>
+    <script src="diagrama.js"></script>
+    <script src="parte.js"></script>
+    <script src="ahora.js"></script>
+    <script src="obra.js"></script>
+    <script src="sesiones.js"></script>
+</body>
+</html>

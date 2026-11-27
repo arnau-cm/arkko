@@ -1,0 +1,144 @@
+/* AHORA: LA SECCIÓN DE LA SESIÓN */
+
+/* El papel: la retícula fina del Diagrama, y las fichas como láminas de un plano, con un borde fino de tinta y cuatro
+   marcas de esquina, como las de corte */
+.ah-view {
+    --ah-ink: color-mix(in srgb, var(--fg-faint) 70%, transparent);
+    --ah-line: color-mix(in srgb, var(--fg-faint) 32%, transparent);
+    --ah-grid: color-mix(in srgb, var(--fg-faint) 9%, transparent);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 26px 28px;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 26px clamp(16px, 3vw, 34px) 40px;
+    font-family: var(--ui-font);
+    background-image: linear-gradient(var(--ah-grid) 1px, transparent 1px), linear-gradient(90deg, var(--ah-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+:root[data-theme="light"] .ah-view { --ah-ink: rgba(40, 46, 60, 0.5); --ah-line: rgba(40, 46, 60, 0.16); --ah-grid: rgba(20, 24, 33, 0.05); }
+.ah-sheet { position: relative; background: var(--tip); border: 1px solid var(--ah-ink); }
+.ah-sheet::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    pointer-events: none;
+    background:
+        linear-gradient(var(--ah-ink), var(--ah-ink)) left top / 10px 1px no-repeat, linear-gradient(var(--ah-ink), var(--ah-ink)) left top / 1px 10px no-repeat,
+        linear-gradient(var(--ah-ink), var(--ah-ink)) right top / 10px 1px no-repeat, linear-gradient(var(--ah-ink), var(--ah-ink)) right top / 1px 10px no-repeat,
+        linear-gradient(var(--ah-ink), var(--ah-ink)) left bottom / 10px 1px no-repeat, linear-gradient(var(--ah-ink), var(--ah-ink)) left bottom / 1px 10px no-repeat,
+        linear-gradient(var(--ah-ink), var(--ah-ink)) right bottom / 10px 1px no-repeat, linear-gradient(var(--ah-ink), var(--ah-ink)) right bottom / 1px 10px no-repeat;
+}
+.ah-body { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px 22px; }
+
+/* Chapas: llenas del color de lo que hacen, o con aro si son un mensaje, como las paradas del Diagrama */
+.ah-chip { display: inline-grid; flex: none; place-items: center; width: 32px; height: 32px; color: var(--on-actor); background: var(--c); border-radius: 50%; }
+.ah-chip.ah-soft { color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--tip)); }
+.ah-chip.small { width: 22px; height: 22px; }
+.ah-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ah-chip.small .ah-icon { width: 12px; height: 12px; }
+.ah-letter { display: inline-grid; flex: none; place-items: center; width: 20px; height: 20px; font: 700 10.5px var(--mono); color: var(--on-actor); background: var(--actor); border-radius: 50%; }
+
+/* LA FICHA GRANDE: a todo el ancho; el titular con el reloj grande a su derecha y, debajo, la franja de quién y qué hace */
+.ah-hero { grid-column: 1 / -1; }
+.ah-title { display: flex; align-items: center; gap: 14px; }
+.ah-title h2 { flex: 1; min-width: 0; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.25; color: var(--fg-title, var(--fg)); text-wrap: balance; overflow-wrap: anywhere; }
+/* Los relojes, de ancho fijo y cifras del mismo ancho: al pasar de «59 s» a «1 min 0 s» no se mueve nada */
+.ah-bigclock { flex: none; width: 200px; margin-left: auto; padding-left: 16px; text-align: right; }
+.ah-bigclock .ah-clock-value { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 26px; font-weight: 700; color: var(--fg); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ah-bigclock.live .ah-clock-value { color: var(--danger); }
+.ah-bigclock small { display: block; font-size: 12px; color: var(--fg-faint); white-space: nowrap; }
+.ah-live-dot { flex: none; width: 9px; height: 9px; background: var(--danger); border-radius: 50%; animation: ah-pulse 1.6s ease-out infinite; }
+@keyframes ah-pulse { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 55%, transparent); } to { box-shadow: 0 0 0 8px transparent; } }
+.ah-cells { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); border-top: 1px solid var(--ah-line); border-bottom: 1px solid var(--ah-line); }
+.ah-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 14px 9px; border-left: 1px solid var(--ah-line); }
+.ah-cell:first-child { border-left: 0; padding-left: 0; }
+.ah-cell small { font-size: 11.5px; font-weight: 600; color: var(--fg-faint); }
+.ah-cell b { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 14px; font-weight: 600; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ah-cmd { margin: 0; padding: 9px 12px; font: 12.5px/1.5 var(--mono); color: var(--fg); white-space: pre-wrap; overflow-wrap: anywhere; background: color-mix(in srgb, var(--fg) 5%, transparent); border: 1px solid var(--ah-line); }
+/* Lo último que terminó: un detalle del plano, en un recuadro de rayas con su rótulo sobre el borde */
+.ah-detail { position: relative; padding: 15px 14px 12px; border: 1px dashed var(--ah-ink); }
+.ah-detail > small { position: absolute; top: -9px; left: 10px; max-width: calc(100% - 20px); padding: 0 6px; overflow: hidden; font-size: 12px; font-weight: 600; color: var(--fg-faint); white-space: nowrap; text-overflow: ellipsis; background: var(--tip); }
+.ah-detail > pre { margin: 0; max-height: 14em; overflow: auto; font: 12px/1.55 var(--mono); color: var(--fg-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ah-detail > .md { max-height: 16em; overflow: auto; font-size: 13px; line-height: 1.5; color: var(--fg-muted); }
+/* En una ventana estrecha o baja, una columna, y la vista entera vuelve a tener scroll: no cabe todo a la vez */
+@media (max-width: 860px), (max-height: 560px) {
+    .ah-view { display: flex; flex-direction: column; height: auto; min-height: 100%; overflow: visible; }
+    .ah-log-scroll, .ah-crew-scroll { flex: none; overflow: visible; }
+}
+.ah-detail.error { border-color: color-mix(in srgb, var(--danger) 70%, transparent); }
+
+/* SOBRE EL LIENZO: la página ocupa lo que deja libre la ficha, con su scroll si no cabe. Lo que abre una ficha se señala
+   al pasar por encima, y lo que la tiene abierta queda marcado, como una parada elegida del Diagrama */
+.wf-stage.ah-root { cursor: default; }
+.ah-page { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: auto; }
+.ah-page .ah-pick, .ah-page .ah-pick * { cursor: pointer; }
+.ah-sheet.ah-pick:hover, .ah-sheet.ah-pick.picked { border-color: var(--fg-muted); }
+.ah-sheet.ah-pick.picked { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.ah-item.ah-pick:hover { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.ah-item.picked { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+/* La pregunta: la lámina entera en el amarillo de preguntar, con sus opciones numeradas como marcas de referencia */
+.ah-sheet.ask { --ask: var(--st-waiting); border-color: var(--ask); background: color-mix(in srgb, var(--ask) 9%, var(--tip)); }
+:root[data-theme="light"] .ah-sheet.ask { --ask: #b07a00; }
+.ah-sheet.ask .ah-bigclock .ah-clock-value { color: var(--ask); }
+.ah-sheet.ask .ah-live-dot { background: var(--ask); }
+.ah-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border: 1px solid color-mix(in srgb, var(--ask) 50%, transparent); }
+.ah-opt { display: flex; gap: 10px; padding: 10px 12px; background: var(--tip); border-left: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); }
+.ah-opt:first-child { border-left: 0; }
+.ah-opt i { display: grid; flex: none; place-items: center; width: 22px; height: 22px; font: 700 11px var(--mono); font-style: normal; color: var(--ask); border: 1.5px solid var(--ask); border-radius: 50%; }
+.ah-opt b { display: block; font-size: 13.5px; color: var(--fg); }
+.ah-opt span { font-size: 12px; color: var(--fg-muted); }
+.ah-where { margin: 0; font-size: 12.5px; color: var(--fg-muted); }
+
+/* SECCIONES: el Parte y quién trabaja, cada una con su lista y su scroll. El margen de dentro deja ver las marcas de
+   esquina de las láminas, que salen 7 px por fuera */
+.ah-section { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.ah-section-head { display: flex; flex: none; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.ah-log-scroll, .ah-crew-scroll { flex: 1; min-height: 0; overflow: auto; padding: 8px; margin: 0 -8px; }
+.ah-section-head h3 { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--fg); }
+.ah-section-head span { font-size: 12px; color: var(--fg-faint); }
+.ah-actors { display: flex; flex-direction: column; gap: 18px; }
+.ah-actors > .ah-sheet { flex: none; }
+.ah-none .ah-doing { font-weight: 600; color: var(--fg); }
+.ah-actor-head { grid-template-columns: minmax(0, 1fr) 118px; border-top: 0; }
+.ah-actor-head .ah-cell:first-child { padding-left: 12px; }
+.ah-cell-time .ah-clock-value { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ah-cell-time .ah-tick { color: var(--danger); }
+.ah-cell-time .ah-live-dot { width: 7px; height: 7px; }
+.ah-actor .ah-body { gap: 8px; padding: 12px 12px 14px; }
+.ah-doing { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--fg-muted); }
+.ah-since { margin: 0; font-size: 12px; color: var(--fg-faint); }
+
+/* El Parte: un hilo como una línea de metro con sus paradas; el título fuerte, con quién lo hizo al lado, y el detalle
+   debajo en un recuadro hundido de dos líneas. Lo de un agente, sangrado; lo de ahora, recuadrado de rayas con «AHORA»,
+   y el final de lo terminado, con «FIN» */
+.ah-log { display: flex; flex-direction: column; }
+.ah-item { --depth: 0; position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: start; margin-left: calc(var(--depth) * 34px); padding: 8px 10px; }
+.ah-item::before { content: ""; position: absolute; left: 25px; top: 0; bottom: 0; width: 2px; background: var(--ah-line); }
+.ah-item:first-child::before { top: 24px; }
+.ah-item:last-child::before { bottom: calc(100% - 24px); }
+.ah-item .ah-chip { position: relative; z-index: 1; }
+.ah-item-words { min-width: 0; }
+.ah-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 32px; }
+.ah-item-text { font-size: 14px; font-weight: 600; color: var(--fg); }
+.ah-item-note { min-width: 0; overflow: hidden; font-size: 12.5px; color: var(--fg-muted); white-space: nowrap; text-overflow: ellipsis; }
+.ah-who { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 1px 9px 1px 2px; overflow: hidden; font-size: 11.5px; font-weight: 600; color: var(--fg-muted); white-space: nowrap; text-overflow: ellipsis; background: var(--tip); border: 1px solid var(--ah-line); border-radius: 999px; }
+.ah-who .ah-letter { width: 17px; height: 17px; font-size: 9px; }
+.ah-item-box { display: -webkit-box; margin-top: 4px; padding: 6px 10px; overflow: hidden; font-size: 12.5px; line-height: 1.45; color: var(--fg-muted); overflow-wrap: anywhere; background: color-mix(in srgb, var(--fg) 4%, var(--tip)); border: 1px solid var(--ah-line); border-radius: 6px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-height: calc(2.9em + 14px); }
+.ah-item-box.mono { max-height: calc(3em + 14px); font: 11.5px/1.5 var(--mono); }
+.ah-item-box strong { font-weight: 700; color: var(--fg); }
+.ah-item-box code { padding: 0 3px; font: 11px var(--mono); background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 3px; }
+.ah-when { padding-top: 8px; font: 11px var(--mono); color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.ah-item.here { border: 1px dashed var(--danger); }
+.ah-item.here::after, .ah-item.end::after { content: "AHORA"; position: absolute; top: -8px; right: 10px; padding: 0 6px; font: 700 10.5px var(--ui-font); letter-spacing: 0.04em; color: var(--danger); background: var(--page-solid, var(--tip)); }
+.ah-item.end { border: 1px dashed var(--c-main); }
+.ah-item.end::after { content: "FIN"; color: var(--c-main); }
+.ah-item.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.ah-item.match { background: color-mix(in srgb, var(--st-waiting) 14%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+    .ah-live-dot { animation: none; }
+}

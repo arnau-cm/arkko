@@ -1,0 +1,304 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.SecurityView"
+             x:DataType="local:SecurityModel">
+    <UserControl.Resources>
+        <!-- Las dos etiquetas de un secreto, en fila y con su color: rojo lo enviado, ámbar lo escrito -->
+        <DataTemplate x:Key="SecretTags" x:DataType="local:SecretRow">
+            <StackPanel Orientation="Horizontal">
+                <Border Classes="secretTag" IsVisible="{Binding Sent}" Background="{Binding SentFill}" BorderBrush="{Binding SentBrush}"
+                        ToolTip.Tip="Pasó por una conversación con Claude: ya llegó a Anthropic">
+                    <TextBlock Text="Enviada" Classes="secretTagText ownColor" Foreground="{Binding SentBrush}" FontWeight="SemiBold" />
+                </Border>
+                <Border Classes="secretTag" IsVisible="{Binding InFile}" Background="{Binding WrittenFill}" BorderBrush="{Binding WrittenBrush}"
+                        ToolTip.Tip="Escrita tal cual en un fichero de configuración que Claude puede leer">
+                    <TextBlock Text="En un fichero" Classes="secretTagText ownColor" Foreground="{Binding WrittenBrush}" FontWeight="SemiBold" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- UNA APARICIÓN EN EL DETALLE: cuándo, dónde y de qué salió, con sus acciones -->
+        <DataTemplate x:Key="AppearanceCard" x:DataType="local:AppearanceRow">
+            <Border Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,10" Margin="0,0,0,8">
+                <DockPanel>
+                    <!-- Icono de dónde salió: un prompt, un texto pegado, la respuesta de Claude, un fichero, un comando o la configuración -->
+                    <Border DockPanel.Dock="Left" Width="28" Height="28" CornerRadius="14" Background="{DynamicResource ButtonFill}" VerticalAlignment="Top"
+                            Margin="0,0,12,0" ToolTip.Tip="{Binding Source}">
+                        <TextBlock Text="{Binding Glyph}" Classes="icon" FontSize="12" Foreground="{DynamicResource FgMuted}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Session}" Foreground="{DynamicResource FgFaint}" Classes="label"
+                                       FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                            <TextBlock TextTrimming="CharacterEllipsis">
+                                <Run Text="{Binding When}" FontWeight="SemiBold" /><Run Text="  ·  " Foreground="{DynamicResource FgFaint}" /><Run Text="{Binding Place}" />
+                            </TextBlock>
+                        </DockPanel>
+                        <TextBlock Text="{Binding Source}" Foreground="{DynamicResource FgMuted}" Classes="label" Margin="0,2,0,0" />
+                        <TextBlock Text="{Binding Path}" IsVisible="{Binding PathVisible}" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                   TextWrapping="Wrap" Margin="0,4,0,0" />
+                        <WrapPanel Margin="0,8,0,0" IsVisible="{Binding ActionsVisible}">
+                            <Button Theme="{StaticResource ChipButton}" Click="Prompt_Click" Margin="0,0,8,0" IsVisible="{Binding PromptButtonVisible}"
+                                    Content="{Binding PromptButtonText}" ToolTip.Tip="El prompt donde salió, con cada secreto tapado por su máscara" />
+                            <Button Theme="{StaticResource ChipButton}" Click="Where_Click" Margin="0,0,8,0" IsVisible="{Binding WhereButtonVisible}"
+                                    Content="{Binding WhereButtonText}" ToolTip.Tip="En qué parte de la llamada salió y el texto de alrededor, con cada secreto tapado por su máscara" />
+                            <!-- El valor real solo mientras se mantiene pulsado: no se guarda, no se puede copiar y se tapa al soltar -->
+                            <Button Theme="{StaticResource ChipButton}" Margin="0,0,8,0" Content="Mantener pulsado para ver"
+                                    ClickMode="Press" Click="Reveal_Click" PointerCaptureLost="Reveal_Released" LostFocus="Reveal_LostFocus"
+                                    ToolTip.Tip="Enseña el valor real mientras lo mantienes pulsado, leído en el momento de donde salió; al soltar vuelve a taparse" />
+                            <Button Theme="{StaticResource ChipButton}" Click="ShowFile_Click" Tag="{Binding Path}" Margin="0,0,8,0"
+                                    IsVisible="{Binding PathVisible}" ToolTip.Tip="Abre la carpeta del fichero; nunca abre el fichero">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE838;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Mostrar en la carpeta" />
+                                </StackPanel>
+                            </Button>
+                            <Button Theme="{StaticResource ChipButton}" Click="CopyPath_Click" Tag="{Binding Path}" Margin="0,0,8,0"
+                                    IsVisible="{Binding PathVisible}" Content="Copiar ruta" />
+                            <Button Theme="{StaticResource ChipButton}" Click="OpenSession_Click" Tag="{Binding SessionId}"
+                                    IsVisible="{Binding SessionButtonVisible}" ToolTip.Tip="Abre esta sesión en Sesiones, en el paso donde salió si se sabe">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8F2;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Ver la sesión" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <!-- El prompt, desplegado en su sitio; se lee al pedirlo -->
+                        <Border IsVisible="{Binding PromptVisible}" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}"
+                                Padding="8" Margin="0,8,0,0">
+                            <TextBox Text="{Binding PromptText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="320"
+                                     BorderThickness="0" Background="Transparent" FontFamily="{StaticResource MonoFont}" FontSize="11" />
+                        </Border>
+                        <!-- El valor real mientras se pulsa: un TextBlock, que no deja seleccionarlo ni copiarlo -->
+                        <Border IsVisible="{Binding RevealVisible}" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}"
+                                Padding="8" Margin="0,8,0,0">
+                            <TextBlock Text="{Binding RevealText}" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="12" />
+                        </Border>
+                        <!-- Dónde salió en la llamada y el texto de alrededor, tapado; se lee del transcript al pedirlo -->
+                        <Border IsVisible="{Binding WhereVisible}" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}"
+                                Padding="8" Margin="0,8,0,0">
+                            <TextBox Text="{Binding WhereText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="320"
+                                     BorderThickness="0" Background="Transparent" FontFamily="{StaticResource MonoFont}" FontSize="11" />
+                        </Border>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- ETIQUETA DE UN SECRETO: «Enviada» o «En un fichero» -->
+        <Style Selector="Border.secretTag">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.secretTagText">
+            <Setter Property="FontSize" Value="10" />
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Nunca se desplaza la página: solo la lista y el detalle, cada uno por su cuenta -->
+    <Grid RowDefinitions="Auto,*">
+        <!-- CABECERA: el estado de un vistazo, el reparto de todos los secretos y el análisis -->
+        <Border Classes="lens" Padding="18,14" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                <!-- Candado de la sección, siempre el mismo y en el acento de la app: color sin parecer una alarma -->
+                <Grid Width="48" Height="48" VerticalAlignment="Center" Margin="0,0,16,0"
+                      ToolTip.Tip="Claves que han llegado a Anthropic en las sesiones de Claude Code y las escritas tal cual en su configuración, donde Claude las puede leer. Solo se ve el valor enmascarado, y nada sale del equipo.">
+                    <Ellipse Fill="{DynamicResource Accent}" Opacity="0.16" />
+                    <Ellipse Stroke="{DynamicResource Accent}" StrokeThickness="1" Opacity="0.45" />
+                    <TextBlock Text="&#xE72E;" Classes="icon" FontSize="22" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Grid>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,32,0" MinWidth="250">
+                    <TextBlock Text="{Binding Headline}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding HeadlineDetail}" Foreground="{DynamicResource FgMuted}" Margin="0,2,0,0" />
+                    <TextBlock Text="{Binding ScanStatus}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,6,0,0"
+                               TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ScanStatus}" />
+                </StackPanel>
+
+                <!-- Reparto de todos los secretos por estado, en sus colores; sin secretos, solo la pista -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,32,0">
+                    <Grid Height="10">
+                        <Border CornerRadius="5" Background="{DynamicResource TrackFill}" IsVisible="{Binding EmptyBarVisible}" />
+                        <local:ShareBar Slices="{Binding ShareSegments}" ToolTip.Tip="{Binding SharesTip}" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Shares}" Margin="0,10,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:ShareSlice">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                                    <Ellipse Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock VerticalAlignment="Center" Classes="label">
+                                        <Run Text="{Binding Count}" FontWeight="SemiBold" /><Run Text=" " /><Run Text="{Binding Label}" Foreground="{DynamicResource FgMuted}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding Totals}" Foreground="{DynamicResource FgMuted}" HorizontalAlignment="Right" Margin="0,0,0,8" />
+                    <Button Theme="{StaticResource ChipButton}" Click="ScanAll_Click" HorizontalAlignment="Right" IsEnabled="{Binding CanScanAll}"
+                            ToolTip.Tip="Analiza todos los transcripts del equipo, también los de antes de instalar la app y los de Cowork en Claude Desktop. El historial de prompts y la configuración se miran en cada análisis">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE721;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding ScanAllText}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="380,12,*">
+            <!-- LISTA: pestañas por estado, filtros y los secretos, con su propio desplazamiento -->
+            <Border Classes="lens" Padding="12" Margin="0">
+                <DockPanel>
+                    <!-- Pasan a otra línea si no caben, como con la letra ancha del diseño de terminal -->
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SecretList" IsChecked="{Binding ShowPending}" Content="{Binding PendingChip}" Margin="0,0,8,4" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SecretList" IsChecked="{Binding ShowRotated}" Content="{Binding RotatedChip}" Margin="0,0,8,4" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SecretList" IsChecked="{Binding ShowIgnored}" Content="{Binding IgnoredChip}" Margin="0,0,8,4" />
+                    </WrapPanel>
+                    <TextBox DockPanel.Dock="Top" Margin="0,0,0,8" Padding="6,3" Text="{Binding Query}"
+                             PlaceholderText="Buscar por tipo, valor, proyecto o fichero" />
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Button Theme="{StaticResource ChipButton}" Click="KindFilter_Click" Content="{Binding KindFilterText}" Margin="0,0,8,4"
+                                ToolTip.Tip="Filtra por tipo de secreto" />
+                        <Button Theme="{StaticResource ChipButton}" Click="ProjectFilter_Click" Content="{Binding ProjectFilterText}" Margin="0,0,8,4"
+                                ToolTip.Tip="Filtra por proyecto" />
+                        <Button Theme="{StaticResource ChipButton}" Click="ShowIgnored_Click" Content="Volver a mostrarlos todos" Margin="0,0,8,4"
+                                IsVisible="{Binding ResetIgnoredVisible}" ToolTip.Tip="Quita la marca de falso positivo a todos y vuelven a pendientes" />
+                    </WrapPanel>
+                    <Grid>
+                        <ListBox Classes="rows" ItemsSource="{Binding VisibleRows}" SelectedItem="{Binding Selected}"
+                                 Background="Transparent" BorderThickness="0" Padding="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:SecretRow">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <!-- Punto del color de su estado -->
+                                        <Ellipse Width="8" Height="8" Fill="{Binding StatusBrush}" VerticalAlignment="Top" Margin="0,5,10,0" ToolTip.Tip="{Binding Status}" />
+                                        <StackPanel Grid.Column="1">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding When}" Foreground="{DynamicResource FgFaint}" Classes="label"
+                                                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                                                <TextBlock Text="{Binding Kind}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
+                                            <TextBlock Margin="0,2,0,0" TextTrimming="CharacterEllipsis" Classes="label">
+                                                <Run Text="{Binding Masked}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource FgMuted}" /><Run
+                                                     Text="  ·  " Foreground="{DynamicResource FgFaint}" /><Run Text="{Binding Projects}" Foreground="{DynamicResource FgMuted}" />
+                                            </TextBlock>
+                                            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SecretTags}" Focusable="False" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock Text="{Binding ListEmptyText}" IsVisible="{Binding ListEmptyVisible}" Foreground="{DynamicResource FgFaint}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="16" />
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- DETALLE del secreto elegido, con su propio desplazamiento -->
+            <Border Grid.Column="2" Classes="lens" Padding="0" Margin="0">
+                <Grid>
+                    <ScrollViewer Name="DetailScroll" VerticalScrollBarVisibility="Auto" Padding="20,16" IsVisible="{Binding DetailVisible}">
+                        <StackPanel DataContext="{Binding Selected}" x:DataType="local:SecretRow">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" CornerRadius="8" Padding="8,1" VerticalAlignment="Center" Background="{Binding StatusFill}">
+                                    <TextBlock Classes="ownColor" Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontSize="11" FontWeight="SemiBold" />
+                                </Border>
+                                <TextBlock Text="{Binding Kind}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Text="{Binding Masked}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource FgMuted}"
+                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SecretTags}" Focusable="False" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource FgFaint}" Classes="label" TextWrapping="Wrap" Margin="0,6,0,0" />
+
+                            <!-- Qué hacer con él, en el color de lo que falta: rojo, ámbar, verde o gris -->
+                            <Border Background="{Binding ToneFill}" CornerRadius="{DynamicResource RadiusS}" Margin="0,14,0,0">
+                                <Grid>
+                                    <Border Width="3" HorizontalAlignment="Left" CornerRadius="2" Margin="0,8" Background="{Binding ToneBrush}" />
+                                    <DockPanel Margin="14,10,12,10">
+                                        <TextBlock DockPanel.Dock="Left" Text="{Binding AdviceGlyph}" Classes="icon" FontSize="14"
+                                                   Foreground="{Binding ToneBrush}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                                        <TextBlock Text="{Binding Advice}" TextWrapping="Wrap" LineHeight="18" />
+                                    </DockPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Si es uno de los tokens de la sección Tokens: cuál, y el camino hasta él; si no, enlazarlo -->
+                            <Border IsVisible="{Binding TokenVisible}" Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}"
+                                    Margin="0,10,0,0" Padding="12,8">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="ShowToken_Click" VerticalAlignment="Center"
+                                            Margin="8,0,0,0" Content="Ver en Tokens" ToolTip.Tip="Abre el token: cuándo toca cambiarlo, dónde se cambia y sus pasos" />
+                                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="UnlinkToken_Click" VerticalAlignment="Center"
+                                            Margin="8,0,0,0" Content="Quitar el enlace" IsVisible="{Binding UnlinkTokenVisible}"
+                                            ToolTip.Tip="No es ese token: deja de enlazarlos" />
+                                    <TextBlock DockPanel.Dock="Left" Text="&#xE8D7;" Classes="icon" FontSize="13" Foreground="{DynamicResource Accent}"
+                                               VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <TextBlock Text="{Binding TokenLine}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                </DockPanel>
+                            </Border>
+                            <Button Theme="{StaticResource ChipButton}" Click="LinkToken_Click" IsVisible="{Binding LinkTokenVisible}" HorizontalAlignment="Left"
+                                    Margin="0,10,0,0" ToolTip.Tip="Si este secreto es uno de tus tokens de la sección Tokens, enlázalo: su recordatorio pasará a «Toca cambiarlo ya»">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8D7;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Es uno de mis tokens  ▾" />
+                                </StackPanel>
+                            </Button>
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Theme="{StaticResource ActionDone}" Click="Rotated_Click" Tag="{Binding Fingerprint}" IsVisible="{Binding PendingVisible}"
+                                        ToolTip.Tip="Ya la has cambiado en su servicio: pasa a «Rotados» y deja de contar como pendiente">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE73E;" Classes="icon" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Ya rotado" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Theme="{StaticResource ActionButton}" Click="Ignore_Click" Tag="{Binding Fingerprint}" IsVisible="{Binding PendingVisible}"
+                                        ToolTip.Tip="No es un secreto: pasa a «Falsos positivos» y deja de contar, en todas las sesiones">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE711;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Falso positivo" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Theme="{StaticResource ActionButton}" Click="Unmark_Click" IsVisible="{Binding MarkedVisible}" ToolTip.Tip="{Binding UnmarkTip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE7A7;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Volver a pendiente" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Theme="{StaticResource ActionButton}" Click="Delete_Click" IsVisible="{Binding DeleteVisible}" Foreground="{DynamicResource Danger}"
+                                        ToolTip.Tip="Lo borra de la sección con todas sus apariciones. Si comparte fichero con otros secretos, avisa antes">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE74D;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Eliminar" />
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+
+                            <TextBlock Classes="menuLabel" Text="{Binding AppearancesTitle}" Margin="2,20,0,8" />
+                            <ItemsControl ItemsSource="{Binding Appearances}" ItemTemplate="{StaticResource AppearanceCard}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <TextBlock Text="{Binding DetailEmptyText}" IsVisible="{Binding DetailEmptyVisible}" Foreground="{DynamicResource FgFaint}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="24" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

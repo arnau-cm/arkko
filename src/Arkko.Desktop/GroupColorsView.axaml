@@ -1,0 +1,47 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.GroupColorsView"
+             x:DataType="local:GroupColorsModel">
+    <UserControl.Resources>
+        <!-- Una muestra del menú: su color y, si la añadió la persona, la cruz para quitarla -->
+        <DataTemplate x:Key="Swatch" x:DataType="local:GroupSwatch">
+            <Panel Margin="0,0,10,6" ToolTip.Tip="{Binding Hex}">
+                <Border Width="22" Height="22" CornerRadius="11" Background="{Binding Brush}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" />
+                <Button Theme="{StaticResource CloseButton}" Width="14" Height="14" FontSize="8" FontFamily="{StaticResource IconFont}" Margin="0,-5,-7,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Content="&#xE8BB;"
+                        IsVisible="{Binding RemoveVisible}" ToolTip.Tip="Quitar este color" Click="Remove_Click" />
+            </Panel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,8">
+        <TextBlock Classes="settingName" Text="Colores de los grupos" />
+        <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                   Text="Los que salen al pulsar con el botón derecho en un grupo de Sesiones → Activas. Los seis primeros vienen de serie; los tuyos se quitan con la cruz." />
+        <ItemsControl ItemsSource="{Binding Swatches}" ItemTemplate="{StaticResource Swatch}" Margin="0,10,0,4">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <!-- AÑADIR: el código a mano o con el selector; la muestra enseña el color mientras se escribe -->
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+            <TextBox Width="110" Padding="6,3" MaxLength="7" VerticalAlignment="Center" Text="{Binding Code}" KeyDown="Code_KeyDown" />
+            <Border Width="22" Height="22" CornerRadius="11" Margin="8,0" VerticalAlignment="Center"
+                    Background="{Binding Preview}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" />
+            <Button Name="PickButton" Theme="{StaticResource ChipButton}" Content="Elegir…" Margin="0,0,8,0" Click="Pick_Click"
+                    ToolTip.Tip="Elegir el color en un cuadro de tono y brillo" VerticalAlignment="Center" />
+            <Button Theme="{StaticResource ChipButton}" Content="Añadir" IsEnabled="{Binding CanAdd}" Click="Add_Click" VerticalAlignment="Center" />
+        </StackPanel>
+        <!-- SELECTOR: cuelga de «Elegir…» y se cierra al pulsar fuera, sin tocar el campo -->
+        <Popup Name="PickerPopup" PlacementTarget="{Binding #PickButton}" Placement="BottomEdgeAlignedLeft" VerticalOffset="6" IsLightDismissEnabled="True">
+            <Border Padding="12" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}"
+                    BorderThickness="1" BoxShadow="0 3 14 0 #38000000" Margin="0,0,10,10">
+                <local:ColorPicker Name="Picker" />
+            </Border>
+        </Popup>
+        <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource FgFaint}" Classes="label" Margin="0,6,0,0" />
+    </StackPanel>
+</UserControl>

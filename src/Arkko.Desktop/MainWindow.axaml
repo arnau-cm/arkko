@@ -1,0 +1,355 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Arkko.Desktop"
+        x:Class="Arkko.Desktop.MainWindow"
+        x:DataType="local:MainViewModel"
+        Title="Arkko" Icon="{DynamicResource AppWindowIcon}"
+        Width="456" MinWidth="300" SizeToContent="Height"
+        Topmost="True" WindowDecorations="None" CanResize="False" ShowInTaskbar="True"
+        TransparencyLevelHint="Transparent" Background="Transparent">
+
+    <Window.Resources>
+        <!-- ESCUDO DE SEGURIDAD: un botón más de la barra, solo con secretos pendientes; el contador en la
+             esquina. Lo comparten la vista normal y la compacta. -->
+        <DataTemplate x:Key="SecurityBadge" x:DataType="local:MainViewModel">
+            <Grid IsVisible="{Binding SecurityBadgeVisible}" ToolTip.Tip="{Binding SecurityBadgeTip}">
+                <Button Theme="{StaticResource BarButton}" Click="SecurityBadge_Click" Content="&#xEA18;" FontSize="11"
+                        Foreground="{DynamicResource Danger}" />
+                <Border Background="{DynamicResource Danger}" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-1,0" IsHitTestVisible="False">
+                    <TextBlock Classes="ownColor" Text="{Binding SecurityBadgeText}" Foreground="White" FontSize="9" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- VULNERABILIDADES: junto al escudo, solo con algo que falle o un aviso sin ver; rojo con las FALLAs arriba y ámbar
+             con los avisos abajo. En ámbar entero si solo hay avisos. -->
+        <DataTemplate x:Key="VulnerabilityBadge" x:DataType="local:MainViewModel">
+            <Grid IsVisible="{Binding VulnerabilityBadgeVisible}" ToolTip.Tip="{Binding VulnerabilityBadgeTip}">
+                <Button Theme="{StaticResource BarButton}" Classes="vulnerability" Classes.unseen="{Binding VulnerabilityOnlyUnseen}"
+                        Click="VulnerabilityBadge_Click" Content="&#xEBE8;" FontSize="11" />
+                <Border Background="{DynamicResource Danger}" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-1,0" IsHitTestVisible="False"
+                        IsVisible="{Binding VulnerabilityFailuresVisible}">
+                    <TextBlock Classes="ownColor" Text="{Binding VulnerabilityFailuresText}" Foreground="White" FontSize="9" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Border Background="{DynamicResource DataFiveHour}" CornerRadius="7" MinWidth="14" Height="14" Padding="3,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-1,-4" IsHitTestVisible="False"
+                        IsVisible="{Binding VulnerabilityUnseenVisible}">
+                    <TextBlock Classes="ownColor" Text="{Binding VulnerabilityUnseenText}" Foreground="{DynamicResource PrimaryText}" FontSize="9" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <!-- El cristal de la ventana va en un estilo y no en el propio Border: así la pastilla, que lleva su diseño, lo apaga -->
+    <Window.Styles>
+        <!-- Icono de vulnerabilidades: rojo si algo falla; ámbar si solo hay avisos sin ver -->
+        <Style Selector="Button.vulnerability">
+            <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+        </Style>
+        <Style Selector="Button.vulnerability.unseen">
+            <Setter Property="Foreground" Value="{DynamicResource DataFiveHour}" />
+        </Style>
+        <Style Selector="Border#Shell">
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusL}" />
+            <Setter Property="Background" Value="{DynamicResource GlassBase}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassEdge}" />
+        </Style>
+        <Style Selector="Border#Shell.pill">
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="Border#Shell.pill Border#ShellSheen">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Border#Shell.pill Border#ShellScanlines">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+    </Window.Styles>
+
+    <Border Name="Shell" Classes.pill="{Binding Mini}" BorderThickness="1" ClipToBounds="True">
+        <Grid Name="Surface">
+            <Border Name="ShellSheen" Background="{DynamicResource Sheen}" IsHitTestVisible="False" />
+
+            <!-- VISTA COMPLETA -->
+            <DockPanel IsVisible="{Binding FullVisible}">
+                <Grid DockPanel.Dock="Top" Height="44" Background="Transparent" PointerPressed="TitleBar_PointerPressed">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Image Source="{DynamicResource AppLogo}" RenderOptions.BitmapInterpolationMode="HighQuality" Width="18" Height="18" Margin="0,0,8,0" />
+                        <TextBlock Text="Arkko" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VulnerabilityBadge}" Focusable="False" />
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SecurityBadge}" Focusable="False" />
+                        <Button Name="SettingsButton" Theme="{StaticResource BarButton}" Click="Settings_Click"
+                                ToolTip.Tip="Configuración" FontSize="11" Content="&#xE713;" />
+                        <Button Theme="{StaticResource BarButton}" Click="Minimize_Click" ToolTip.Tip="Minimizar" Content="&#xE921;" />
+                        <Button Theme="{StaticResource BarButton}" Click="Panel_Click" ToolTip.Tip="Maximizar: abre el panel de análisis" Content="&#xE922;" />
+                        <Button Theme="{StaticResource CloseButton}" Click="Close_Click" ToolTip.Tip="Cerrar" Content="&#xE8BB;" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="12,0,12,8" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
+                    <!-- LÍMITES -->
+                    <Grid>
+                        <ToggleButton Theme="{StaticResource SectionToggle}" IsChecked="{Binding LimitsOpen}" Content="LÍMITES DE USO"
+                                      HorizontalAlignment="Left" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-8,0"
+                                    IsVisible="{Binding LimitsSummaryVisible}">
+                            <local:ClaudeLogo Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,10,0" ToolTip.Tip="Límites de Claude" />
+                            <ItemsControl ItemsSource="{Binding Limits}" ItemTemplate="{StaticResource MiniLimit}" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Row="1" Classes="lens" Padding="12,8" IsVisible="{Binding LimitsOpen}">
+                        <!-- El logo de Claude a la izquierda de sus límites, centrado: no añade alto -->
+                        <DockPanel>
+                            <local:ClaudeLogo DockPanel.Dock="Left" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,12,0"
+                                              ToolTip.Tip="Límites de Claude" />
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Limits}" ItemTemplate="{StaticResource LimitLine}" />
+                                <TextBlock Text="{Binding LimitsNote}" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap"
+                                           Margin="0,3,0,0" IsVisible="{Binding LimitsNoteVisible}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- CONSUMO DE HOY -->
+                    <ToggleButton Grid.Row="2" Theme="{StaticResource SectionToggle}" IsChecked="{Binding ModelsOpen}" Content="HOY POR MODELO" />
+                    <Border Grid.Row="3" Classes="lens" Padding="12,10" IsVisible="{Binding ModelsOpen}">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModelsSummary}" />
+                    </Border>
+
+                    <!-- SESIONES -->
+                    <ToggleButton Grid.Row="4" Theme="{StaticResource SectionToggle}" IsChecked="{Binding SessionsOpen}"
+                                  Content="{Binding SessionsTitle}" />
+                    <!-- Hasta 3 tarjetas por página: la ventana se ajusta a ellas, con todo desplegado y 3 sesiones como máximo -->
+                    <StackPanel Grid.Row="5" IsVisible="{Binding SessionsOpen}">
+                        <!-- Los hooks de Arkko fallan: lo que se ve puede estar viejo, y se dice antes que nada -->
+                        <Border BorderBrush="{DynamicResource Danger}" BorderThickness="1" IsVisible="{Binding HookProblemVisible}" CornerRadius="{DynamicResource RadiusS}"
+                                Padding="10,6" Margin="0,2,0,6">
+                            <DockPanel>
+                                <local:HookIcon DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,2,8,0" />
+                                <TextBlock Text="{Binding HookProblem}" TextWrapping="Wrap" FontSize="11.5" Foreground="{DynamicResource FgTitle}" />
+                            </DockPanel>
+                        </Border>
+                        <Grid>
+                            <TextBlock Text="Sin sesiones abiertas" Foreground="{DynamicResource FgFaint}" Margin="4,2"
+                                       IsVisible="{Binding NoSessionsVisible}" />
+                            <ItemsControl ItemsSource="{Binding PageSessions}" ItemTemplate="{StaticResource SessionCard}" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8" IsVisible="{Binding PagerVisible}">
+                            <Button Theme="{StaticResource BarButton}" Click="PrevPage_Click" ToolTip.Tip="Sesiones anteriores" Content="&#xE76B;" />
+                            <TextBlock Text="{Binding PageText}" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center"
+                                       MinWidth="44" TextAlignment="Center" />
+                            <Button Theme="{StaticResource BarButton}" Click="NextPage_Click" ToolTip.Tip="Sesiones siguientes" Content="&#xE76C;" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </DockPanel>
+
+            <!-- MENÚ DE CONFIGURACIÓN -->
+            <Popup Name="SettingsPopup" PlacementTarget="{Binding #SettingsButton}" Placement="Bottom"
+                   HorizontalOffset="-196" VerticalOffset="8" IsLightDismissEnabled="True">
+                <Border Width="222" Padding="16,12" CornerRadius="{DynamicResource RadiusL}" Background="{DynamicResource GlassBase}"
+                        BorderBrush="{DynamicResource GlassEdge}" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Classes="menuLabel" Text="DISEÑO" />
+                        <!-- Un diseño por fila, con una muestra de sus colores; el elegido, marcado -->
+                        <ItemsControl ItemsSource="{Binding AppDesignOptions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:AppDesignOption">
+                                    <RadioButton Theme="{StaticResource MenuChoice}" GroupName="AppDesign" IsChecked="{Binding IsSelected}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="28" Height="14" CornerRadius="{Binding Design.Corner}" Background="{Binding Design.Back}"
+                                                    BorderBrush="{Binding Design.Edge}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <TextBlock Text="{Binding Design.Name}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </RadioButton>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Classes="menuLabel" Text="AVISOS" Margin="2,16,0,8" />
+                        <DockPanel Margin="2,0,0,0">
+                            <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding Sound}" VerticalAlignment="Center"
+                                          ToolTip.Tip="Apagado: sin sonido ni notificaciones; el contador de la pastilla sigue" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SoundIcon}" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"
+                                           Foreground="{DynamicResource FgMuted}" />
+                                <TextBlock Text="{Binding MuteText}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- No molestar: silencio con fin, que se quita solo -->
+                        <TextBlock Text="No molestar" Foreground="{DynamicResource FgMuted}" FontSize="11" Margin="2,8,0,4" />
+                        <StackPanel Classes="quiet" Orientation="Horizontal" IsVisible="{Binding QuietOffVisible}" IsEnabled="{Binding Sound}"
+                                    ToolTip.ShowOnDisabled="True" ToolTip.Tip="{Binding QuietTip}">
+                            <Button Theme="{StaticResource ChipButton}" Click="QuietHour_Click" Margin="0,0,8,0"
+                                    ToolTip.Tip="Sin sonido ni notificaciones durante una hora" Content="1 hora" />
+                            <Button Theme="{StaticResource ChipButton}" Click="QuietTomorrow_Click"
+                                    ToolTip.Tip="Sin sonido ni notificaciones hasta mañana a las 8:00" Content="Hasta mañana" />
+                        </StackPanel>
+                        <StackPanel IsVisible="{Binding QuietOnVisible}" Margin="2,0,0,0">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="&#xE708;" Classes="icon" FontSize="11" VerticalAlignment="Top" Margin="0,2,8,0"
+                                           Foreground="{DynamicResource FgMuted}" />
+                                <TextBlock Text="{Binding QuietText}" TextWrapping="Wrap" />
+                            </DockPanel>
+                            <Button Theme="{StaticResource ChipButton}" Click="QuietOff_Click" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                    ToolTip.Tip="Volver a recibir avisos ahora" Content="Reanudar" />
+                        </StackPanel>
+
+                        <TextBlock Classes="menuLabel" Text="VISTA" Margin="2,16,0,8" />
+                        <DockPanel Margin="2,0,0,8">
+                            <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding FadeWhenIdle}" VerticalAlignment="Center"
+                                          ToolTip.Tip="Sin el ratón encima, la ventana se vuelve semitransparente para no tapar lo de detrás" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE7B3;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"
+                                           Foreground="{DynamicResource FgMuted}" />
+                                <TextBlock Text="Transparente" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DockPanel>
+                        <Button Theme="{StaticResource ChipButton}" Click="CompactFromMenu_Click" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE73F;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Modo compacto" />
+                            </StackPanel>
+                        </Button>
+
+                        <TextBlock Classes="menuLabel" Text="TERMINAL" Margin="2,16,0,8" />
+                        <Button Theme="{StaticResource ChipButton}" Click="TerminalLayout_Click" HorizontalAlignment="Left"
+                                ToolTip.Tip="Elige qué se ve en la barra de estado de Claude Code, en qué orden y con qué colores">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE756;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Personalizar terminal" />
+                            </StackPanel>
+                        </Button>
+
+                        <Border Classes="rule" Margin="0,16,0,8" />
+                        <TextBlock Text="{Binding AppVersion}" Foreground="{DynamicResource FgFaint}" Classes="caption"
+                                   HorizontalAlignment="Center" ToolTip.Tip="{Binding BuildTip}" />
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <!-- MINIMIZADO: pastilla en la esquina con una gota por sesión; un clic la devuelve -->
+            <Border Name="MiniPill" IsVisible="{Binding Mini}" Padding="12,0,12,0" Height="38"
+                    Background="{Binding PillLook.Back}" BorderBrush="{Binding PillLook.Edge}" BorderThickness="1" CornerRadius="{Binding PillLook.Corner}"
+                    TextElement.Foreground="{Binding PillLook.Text}" TextElement.FontFamily="{Binding PillLook.Font}"
+                    Cursor="Hand" PointerReleased="Mini_PointerReleased" PointerEntered="Mini_PointerEntered">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="{DynamicResource AppLogo}" RenderOptions.BitmapInterpolationMode="HighQuality" Width="18" Height="18" Margin="0,0,8,0"
+                           IsVisible="{Binding PillLook.ShowLogo}" />
+                    <TextBlock Text="{Binding PillLook.Prompt}" IsVisible="{Binding PillLook.HasPrompt}" FontSize="13" FontWeight="Bold"
+                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ItemsControl ItemsSource="{Binding Sessions}" ItemTemplate="{StaticResource Droplet}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <!-- Cada gota ocupa 18 por su halo: se solapan para quedar tan juntas como las de 10 -->
+                                <StackPanel Orientation="Horizontal" Spacing="-4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <!-- Límite de 5 h en pequeño -->
+                    <ItemsControl ItemsSource="{Binding MiniLimits}" ItemTemplate="{StaticResource MiniLimit}" VerticalAlignment="Center" Margin="8,0,-16,0"
+                                  IsVisible="{Binding PillLook.ShowLimit}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <Border Background="{DynamicResource Danger}" CornerRadius="9" MinWidth="18" Height="18" Padding="4,0" Margin="8,0,0,0"
+                            IsVisible="{Binding AttentionVisible}" VerticalAlignment="Center">
+                        <TextBlock Classes="ownColor" Text="{Binding AttentionText}" Foreground="White" FontSize="11" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- PANEL DEL MINIMIZADO: al pasar el ratón por la pastilla, límites y sesiones con su estado -->
+            <Popup Name="MiniPanel" PlacementTarget="{Binding #MiniPill}" Placement="Top" VerticalOffset="-10" IsLightDismissEnabled="False">
+                <!-- Con el diseño de la pastilla, como ella: no sigue al tema -->
+                <Border Name="MiniPanelBody" Width="340" Padding="16,12" CornerRadius="{Binding PillLook.PanelCorner}" Background="{Binding PillLook.Back}"
+                        BorderBrush="{Binding PillLook.Edge}" BorderThickness="1"
+                        TextElement.Foreground="{Binding PillLook.Text}" TextElement.FontFamily="{Binding PillLook.Font}">
+                    <StackPanel>
+                        <!-- El logo de Claude delante de sus límites, en la misma línea: no añade alto -->
+                        <DockPanel>
+                            <local:ClaudeLogo DockPanel.Dock="Left" Width="13" Height="13" VerticalAlignment="Center" Margin="0,0,10,0"
+                                              ToolTip.Tip="Límites de Claude" />
+                            <ItemsControl ItemsSource="{Binding Limits}" ItemTemplate="{StaticResource WideLimit}" Margin="0,0,-16,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </DockPanel>
+                        <Border Classes="rule" Margin="0,8,0,8" />
+                        <TextBlock Text="Sin sesiones abiertas" Foreground="{DynamicResource FgFaint}" Margin="0,4"
+                                   IsVisible="{Binding NoSessionsVisible}" />
+                        <ItemsControl ItemsSource="{Binding Sessions}" ItemTemplate="{StaticResource SessionMiniRow}" />
+                    </StackPanel>
+                </Border>
+            </Popup>
+
+            <!-- VISTA COMPACTA: la del panel de la pastilla, fija; con más de 3 sesiones, por páginas -->
+            <DockPanel IsVisible="{Binding CompactVisible}">
+                <Grid DockPanel.Dock="Top" Height="36" Background="Transparent" PointerPressed="TitleBar_PointerPressed">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <Image Source="{DynamicResource AppLogo}" RenderOptions.BitmapInterpolationMode="HighQuality" Width="16" Height="16" Margin="0,0,8,0" />
+                        <TextBlock Text="Arkko" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VulnerabilityBadge}" Focusable="False" />
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SecurityBadge}" Focusable="False" />
+                        <Button Theme="{StaticResource BarButton}" Click="Compact_Click" ToolTip.Tip="Vista completa" Content="&#xE740;" />
+                        <Button Theme="{StaticResource BarButton}" Click="Minimize_Click" ToolTip.Tip="Minimizar" Content="&#xE921;" />
+                        <Button Theme="{StaticResource BarButton}" Click="Panel_Click" ToolTip.Tip="Maximizar: abre el panel de análisis" Content="&#xE922;" />
+                        <Button Theme="{StaticResource CloseButton}" Click="Close_Click" ToolTip.Tip="Cerrar" Content="&#xE8BB;" />
+                    </StackPanel>
+                </Grid>
+                <StackPanel Margin="16,2,16,12">
+                    <!-- El logo de Claude delante de sus límites, en la misma línea: no añade alto -->
+                    <DockPanel>
+                        <local:ClaudeLogo DockPanel.Dock="Left" Width="13" Height="13" VerticalAlignment="Center" Margin="0,0,10,0"
+                                          ToolTip.Tip="Límites de Claude" />
+                        <ItemsControl ItemsSource="{Binding Limits}" ItemTemplate="{StaticResource WideLimit}" Margin="0,0,-16,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </DockPanel>
+                    <Border Classes="rule" Margin="0,8,0,8" />
+                    <!-- Altura fija para 3 filas; la paginación solo ocupa sitio si hay más -->
+                    <Grid Height="90">
+                        <TextBlock Text="Sin sesiones abiertas" Foreground="{DynamicResource FgFaint}" Margin="0,4"
+                                   IsVisible="{Binding NoSessionsVisible}" />
+                        <ItemsControl ItemsSource="{Binding PageSessions}" ItemTemplate="{StaticResource SessionMiniRow}" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0" IsVisible="{Binding PagerVisible}">
+                        <Button Theme="{StaticResource BarButton}" Click="PrevPage_Click" ToolTip.Tip="Sesiones anteriores" Content="&#xE76B;" />
+                        <TextBlock Text="{Binding PageText}" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center"
+                                   MinWidth="44" TextAlignment="Center" />
+                        <Button Theme="{StaticResource BarButton}" Click="NextPage_Click" ToolTip.Tip="Sesiones siguientes" Content="&#xE76C;" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        <Border Name="ShellScanlines" Background="{DynamicResource Scanlines}" IsHitTestVisible="False" />
+        </Grid>
+    </Border>
+</Window>

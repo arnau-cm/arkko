@@ -1,0 +1,381 @@
+/* DIAGRAMA: LA PLANTA DE LA SESIÓN */
+
+/* El papel: el lienzo del directo con una cuadrícula fina y otra más marcada cada cinco, como la de un plano; las
+   mueve y escala la cámara (dgRail) */
+.wf-stage.dg-root {
+    --grid: color-mix(in srgb, var(--fg-faint) 9%, transparent);
+    --grid-major: color-mix(in srgb, var(--fg-faint) 17%, transparent);
+    --ink: color-mix(in srgb, var(--fg-faint) 70%, transparent);
+    --glide: cubic-bezier(0.2, 0.8, 0.2, 1);
+    background-image:
+        linear-gradient(var(--grid-major) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+.wf-stage.dg-root.dg-glide { transition: background-position 0.6s var(--glide), background-size 0.6s var(--glide); }
+:root[data-theme="light"] .wf-stage.dg-root { --grid: rgba(20, 24, 33, 0.05); --grid-major: rgba(20, 24, 33, 0.1); --ink: rgba(40, 46, 60, 0.55); }
+/* Los colores de lo que hace cada parada (dgHue): cada herramienta, por lo que hace, y pensar y responder, el suyo; así
+   el color del actor queda para la línea, la respuesta final y los agentes. Los usan también Ahora y el Parte */
+:root { --dg-read: #58a6ff; --dg-search: #39c5cf; --dg-edit: #f778ba; --dg-run: #a6d96a; --dg-other: #9aa4b8; --dg-think: #f5c451; --dg-say: #c9d1e0; }
+:root[data-theme="light"] { --dg-read: #0969da; --dg-search: #1b7c83; --dg-edit: #bf3989; --dg-run: #4d8a14; --dg-other: #5b6478; --dg-think: #a86f00; --dg-say: #5b6478; }
+
+.dg-layer { position: absolute; left: 0; top: 0; font-family: var(--ui-font); }
+.dg-lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+
+/* Cada línea se desliza a su trazo nuevo. La que lleva a una parada que trae el marcador la dibuja él (dgTrain); otra
+   que aparece se funde, y la que se va se apaga */
+.dg-lines path { fill: none; transition: d 0.55s var(--glide), opacity 0.25s ease; }
+.dg-lines path.enter { animation: dg-fade 0.4s ease-out both; }
+.dg-lines path.leave { opacity: 0; }
+@keyframes dg-fade { from { opacity: 0; } }
+/* La corriente del paso que se está haciendo: puntos que corren por su tramo hacia él */
+.dg-lines path.dg-current { stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 2 14; opacity: 0; transition: d 0.55s var(--glide), opacity 0.3s ease; }
+.dg-lines path.dg-current.on { opacity: 1; animation: dg-run 0.7s linear infinite; }
+@keyframes dg-run { to { stroke-dashoffset: -16; } }
+
+/* EJES Y LÍNEAS */
+.dg-axis { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 14 4 2 4; }
+.dg-line { stroke-width: 4; stroke-linecap: round; }
+.dg-branch { stroke-width: 2.5; stroke-dasharray: 6 4; opacity: 0.85; }
+.dg-branch.back { opacity: 0.5; }
+/* LOS AGENTES QUE YA TERMINARON: su eje, fino, con la línea delgada y sus paradas en puntos, sin rótulos. Su etiqueta va
+   sobre la línea y dice que terminó; al pulsarla, se abre */
+.dg-line.folded { stroke-width: 2; opacity: 0.6; }
+.dg-branch.folded { stroke-width: 1.5; opacity: 0.4; }
+.dg-axis.folded { opacity: 0.5; }
+.dg-idle { stroke-width: 1.5; stroke-dasharray: 3 6; opacity: 0.55; }
+/* Lo que une a la línea de la sesión una herramienta que cuelga de ella */
+.dg-stem { stroke-width: 2; stroke-linecap: round; opacity: 0.65; }
+.dg-wait-line { stroke: var(--st-agents); stroke-width: 3; stroke-dasharray: 2 7; stroke-linecap: round; animation: dg-march 1.2s linear infinite; }
+@keyframes dg-march { to { stroke-dashoffset: -18; } }
+
+/* EL TIEMPO ENTRE PARADAS: en una píldora sobre el tramo; en ámbar lo que tarda 30 s o más, y a trazos una pausa */
+.dg-gap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    padding: 0 7px;
+    font: 600 10.5px/17px var(--mono);
+    color: var(--fg-muted);
+    white-space: nowrap;
+    background: var(--tip);
+    border: 1px solid var(--track-edge);
+    border-radius: 9px;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    transition: transform 0.55s var(--glide), opacity 0.3s ease;
+}
+.dg-gap.long { color: var(--st-waiting); border-color: color-mix(in srgb, var(--st-waiting) 55%, transparent); }
+.dg-gap.pause { color: var(--fg-faint); border-style: dashed; }
+.dg-gap.enter { animation: dg-fade 0.4s ease-out both; }
+.dg-gap:is(.await, .leave) { opacity: 0; }
+
+/* PARADAS: cada una se desliza a su sitio. La que trae el marcador espera oculta y, cuando llega, salta en su sitio; otra
+   que aparece se funde. La que se junta en una fase se apaga camino de ella; la que se va sin más, se apaga */
+.dg-st { --half: 18px; position: absolute; left: 0; top: 0; z-index: 1; width: 0; height: 0; cursor: pointer; transition: transform 0.55s var(--glide), opacity 0.4s ease; }
+.dg-st.major { --half: 23px; z-index: 2; }
+.dg-st.merge { opacity: 0; pointer-events: none; }
+.dg-st.await { opacity: 0; pointer-events: none; transition: transform 0.55s var(--glide); }
+.dg-st.arrive .dg-chip { animation: dg-arrive 0.36s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.dg-st.arrive .dg-lbl { animation: dg-fade 0.3s ease-out both; }
+@keyframes dg-arrive { from { scale: 0.45; } }
+.dg-st.enter { animation: dg-fade 0.35s ease-out both; }
+.dg-st.leave { animation: dg-out 0.25s ease-in forwards; pointer-events: none; }
+@keyframes dg-out { to { opacity: 0; } }
+.dg-chip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    color: var(--actor);
+    background: var(--tip);
+    border: 4px solid var(--actor);
+    border-radius: 50%;
+    box-shadow: var(--shadow);
+    transform: translate(-50%, -50%);
+    transition: scale 0.15s ease, box-shadow 0.2s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.dg-st { --shadow: 0 3px 10px rgba(0, 0, 0, 0.22); }
+.dg-st:hover .dg-chip { scale: 1.12; }
+.dg-st.picked .dg-chip { box-shadow: 0 0 0 3px var(--page), 0 0 0 6px var(--actor), 0 0 22px color-mix(in srgb, var(--actor) 60%, transparent); }
+.dg-st.picked .dg-lbl b { color: var(--actor); }
+.dg-st.on .dg-chip { box-shadow: 0 0 0 3px var(--page), 0 0 0 5px var(--accent); }
+.dg-st.match .dg-chip { box-shadow: 0 0 0 3px var(--page), 0 0 0 5px var(--st-waiting); }
+
+/* Las estaciones, como en un plano de metro: redondas, con un aro grueso del color de lo que son y su icono; las de
+   llegada (tu prompt, un agente que empieza, lo que se entrega y la respuesta final), llenas */
+.dg-st.major .dg-chip { width: 46px; height: 46px; }
+.dg-icon { flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dg-st:is(.k-prompt, .k-start, .deliver) .dg-chip { color: var(--on-actor); background: var(--actor); }
+/* Pensar y responder, discretos: del tamaño de una herramienta, con un aro fino y el icono de su color */
+.dg-st:is(.k-think, .k-say, .k-pending) .dg-chip { width: 36px; height: 36px; border-width: 1.5px; }
+.dg-st:is(.k-think, .k-say, .k-pending) .dg-icon { width: 18px; height: 18px; }
+.dg-st.k-end .dg-chip { width: 36px; height: 36px; border-style: double; border-width: 6px; }
+.dg-st.k-end .dg-icon { width: 15px; height: 15px; }
+.dg-st.k-ask .dg-chip { color: var(--st-waiting); border-color: var(--st-waiting); }
+/* La respuesta final: algo mayor, con el aro de su actor y un tinte suave, sin llenarse */
+.dg-st.final .dg-chip { width: 48px; height: 48px; color: var(--actor); background: color-mix(in srgb, var(--actor) 14%, var(--tip)); border-width: 2px; }
+.dg-st.final .dg-icon { width: 23px; height: 23px; }
+/* La que aún no has revisado: en rojo, con un brillo que late despacio y «Sin revisar» bajo su rótulo, hasta que la abres */
+.dg-st.final.unread .dg-chip { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, var(--tip)); border-color: var(--danger); animation: dg-unread 2s ease-in-out infinite; }
+.dg-st.final.unread .dg-lbl b { color: var(--danger); }
+@keyframes dg-unread { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 18%, transparent), var(--shadow); } }
+.dg-lbl .dg-unread { align-self: center; margin-top: 2px; padding: 0 7px; font: 700 9.5px/15px var(--mono); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: var(--danger); background: var(--tip); border: 1px solid var(--danger); border-radius: 999px; }
+.dg-v .dg-lbl .dg-unread { align-self: flex-start; }
+.dg-st:is(.final, .k-prompt, .k-think) .dg-lbl b { color: var(--actor); }
+.dg-st.k-wait .dg-chip { color: var(--st-agents); border: 3px dashed var(--st-agents); background: color-mix(in srgb, var(--st-agents) 12%, var(--tip)); }
+.dg-st.k-wait .dg-lbl b { color: var(--st-agents); }
+/* La órbita de dentro, al tamaño de los iconos de las demás paradas */
+.dg-st.k-wait .orbit { width: 24px; height: 24px; border-width: 2px; }
+.dg-st.k-wait .orbit::after { width: 6px; height: 6px; }
+.dg-st.k-pending .dg-chip { border-style: dashed; background: color-mix(in srgb, var(--actor) 10%, var(--tip)); animation: dg-think 1.8s ease-in-out infinite; }
+.dg-st.k-pending .dg-lbl b { color: var(--actor); }
+.dg-st.k-pending .dg-icon { transform-origin: 50% 80%; animation: wf-bulb 1.8s ease-in-out infinite; }
+.dg-st.k-pending .wf-think-dots { top: -14px; right: -16px; }
+@keyframes dg-think { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--actor) 22%, transparent); } }
+
+/* Las herramientas: un punto lleno del color de lo que hacen, con su icono en blanco; varias llamadas seguidas, con
+   cuántas en una chapita */
+.dg-st.minor .dg-chip { width: 36px; height: 36px; color: var(--on-actor); background: var(--actor); border: 0; }
+.dg-st.minor .dg-icon { width: 18px; height: 18px; }
+.dg-st.folded { --half: 5px; }
+.dg-st.folded .dg-chip { width: 10px; height: 10px; background: var(--actor); border: 0; box-shadow: none; }
+.dg-st.folded .dg-chip > *, .dg-st.folded .dg-lbl { display: none; }
+.dg-st.has-error .dg-chip { box-shadow: 0 0 0 2.5px var(--danger), var(--shadow); }
+.dg-badge {
+    position: absolute;
+    top: -6px;
+    right: -9px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    font: 700 10px/14px var(--mono);
+    font-style: normal;
+    text-align: center;
+    color: var(--actor);
+    background: var(--tip);
+    border: 2px solid var(--actor);
+    border-radius: 9px;
+}
+
+.dg-badge.bump { animation: dg-bump 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes dg-bump { from { scale: 0.4; } }
+
+/* La de ahora: en rojo, con un halo que late. Una herramienta trabajando, con un aro que gira a su alrededor; una
+   pregunta que espera, con ondas que llaman y su «?» que salta, como en el directo */
+.dg-st.now .dg-chip { color: #fff; background: var(--danger); border-color: var(--danger); animation: dg-now 1.6s ease-in-out infinite; }
+.dg-st.now .dg-badge { color: var(--danger); border-color: var(--danger); }
+.dg-st.now .dg-lbl b { color: var(--danger); }
+@keyframes dg-now { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 25%, transparent), var(--shadow); } }
+.dg-st.busy .dg-chip::after { content: ""; position: absolute; inset: -7px; border: 2px dashed color-mix(in srgb, var(--danger) 80%, transparent); border-radius: inherit; animation: wf-spin 5s linear infinite; pointer-events: none; }
+.dg-st.asking { --ask: var(--st-waiting); }
+:root[data-theme="light"] .dg-st.asking { --ask: #c98a00; }
+/* La pregunta que espera: llena de su amarillo y con una sola onda lenta que sale de ella, sin saltos */
+.dg-st.asking .dg-chip { color: #1c1e24; background: var(--ask); border-color: var(--ask); }
+.dg-st.asking .dg-chip::after { content: ""; position: absolute; inset: -4px; border: 2px solid var(--ask); border-radius: inherit; pointer-events: none; animation: dg-call 2.4s ease-out infinite; }
+@keyframes dg-call { 0% { opacity: 0.7; scale: 1; } 70%, 100% { opacity: 0; scale: 1.7; } }
+.dg-st.asking .dg-lbl b { color: var(--ask); }
+
+/* Rótulos: las estaciones, encima del eje y en fuerte; las herramientas, debajo y en gris. En vertical, a la derecha. El
+   ancho máximo en horizontal deja sitio entre dos paradas a la distancia mínima del plano */
+.dg-lbl { position: absolute; display: flex; flex-direction: column; gap: 2px; width: max-content; max-width: 190px; pointer-events: none; }
+.dg-lbl b { overflow: hidden; max-width: 100%; font-size: 13.5px; font-weight: 600; line-height: 1.2; color: var(--fg); white-space: nowrap; text-overflow: ellipsis; }
+.dg-lbl span { overflow: hidden; max-width: 100%; font-size: 11.5px; line-height: 1.2; color: var(--fg-faint); white-space: nowrap; text-overflow: ellipsis; }
+/* Un fondo del papel tras cada línea del rótulo: los desvíos de los agentes pasan por debajo sin taparlo */
+.dg-lbl :is(b, span) { box-sizing: border-box; padding: 0 4px; background: color-mix(in srgb, var(--tip) 78%, transparent); border-radius: 4px; }
+.dg-lbl strong { font-weight: 700; color: var(--fg-muted); }
+.dg-lbl code { padding: 0 3px; font: 10.5px var(--mono); background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 3px; }
+.dg-st.minor .dg-lbl b { font-size: 12px; color: var(--fg-muted); }
+.dg-st.minor .dg-lbl span { font-size: 11px; }
+.dg-h .dg-lbl { left: 0; align-items: center; max-width: 138px; text-align: center; transform: translateX(-50%); }
+.dg-h .dg-st.major .dg-lbl { bottom: 32px; }
+.dg-h .dg-st:is(.k-think, .k-say, .k-pending) .dg-lbl { bottom: 27px; }
+.dg-h .dg-st.k-end .dg-lbl { bottom: 27px; }
+.dg-h .dg-st.final .dg-lbl { bottom: 33px; max-width: 160px; }
+.dg-h .dg-st.minor .dg-lbl { top: 24px; max-width: 132px; }
+.dg-v .dg-lbl { left: 35px; top: 0; max-width: 150px; transform: translateY(-50%); }
+.dg-v .dg-st:is(.k-think, .k-say, .k-pending) .dg-lbl { left: 30px; }
+.dg-v .dg-st.final .dg-lbl { left: 36px; }
+.dg-v .dg-st.minor .dg-lbl { left: calc(var(--half) + 12px); }
+/* En vertical, tus prompts llevan el rótulo a la izquierda: a la derecha sale la línea que baja a la sesión */
+.dg-v .dg-st.k-prompt .dg-lbl { left: auto; right: 35px; max-width: 140px; align-items: flex-end; text-align: right; }
+
+/* «ESTÁS AQUÍ»: un anillo en la parada en que se está, que viaja hasta la siguiente cuando se avanza */
+.dg-here {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    transition: transform 0.6s var(--glide);
+}
+.dg-here.jump { transition: none; }
+.dg-here.quiet::after { animation: none; opacity: 0; }
+.dg-here::before, .dg-here::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s var(--glide), height 0.4s var(--glide);
+}
+.dg-here.major::before, .dg-here.major::after { width: 68px; height: 68px; }
+.dg-here.soft::before, .dg-here.soft::after { width: 52px; height: 52px; }
+.dg-here.final::before, .dg-here.final::after { width: 70px; height: 70px; }
+.dg-here::before { background: radial-gradient(circle, color-mix(in srgb, var(--actor) 30%, transparent) 0%, transparent 70%); }
+.dg-here::after { border: 1.5px solid color-mix(in srgb, var(--actor) 70%, transparent); }
+/* Solo hace falta en directo o en la repetición, que es cuando se mueve; con la sesión quieta, la última parada ya se ve */
+.dg-here:not(.live, .replay) { visibility: hidden; }
+.dg-here:is(.live, .replay)::after { border-color: color-mix(in srgb, var(--danger) 80%, transparent); }
+.dg-here:is(.live, .replay)::before { background: radial-gradient(circle, color-mix(in srgb, var(--danger) 26%, transparent) 0%, transparent 70%); }
+
+/* LOS EJES: una etiqueta pequeña en el borde, encima de su línea (arriba de su columna, en vertical), con su letra y su
+   nombre, que sigue a la cámara; si va a tocar una parada que pasa, se queda en la letra. En una fila sin nada a la
+   vista, la copia de su último paso, tenue, en el borde, hasta que vuelve a verse el de verdad */
+.dg-rail { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.dg-axis-pill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    margin-top: -11px;
+    padding: 0 9px 0 3px;
+    background: color-mix(in srgb, var(--tip) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--actor) 50%, transparent);
+    border-radius: 11px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(6px);
+    pointer-events: auto;
+    transition: padding 0.25s ease, gap 0.25s ease;
+}
+.dg-rail.dg-v .dg-axis-pill { margin: 0 0 0 -11px; }
+.dg-rail.glide :is(.dg-axis-pill, .dg-ghost) { transition: transform 0.6s var(--glide), padding 0.25s ease, gap 0.25s ease; }
+.dg-axis-pill i { display: grid; flex: none; place-items: center; width: 16px; height: 16px; font: 700 9.5px var(--mono); font-style: normal; color: var(--on-actor); background: var(--actor); border-radius: 50%; }
+.dg-axis-pill span { max-width: 104px; overflow: hidden; font-size: 11px; font-weight: 600; color: var(--fg-muted); white-space: nowrap; text-overflow: ellipsis; transition: max-width 0.25s ease, opacity 0.2s ease; }
+.dg-axis-pill.tight { gap: 0; padding-right: 2px; }
+.dg-axis-pill.can-fold { cursor: pointer; }
+.dg-axis-pill.thin { height: 18px; margin-top: -9px; box-shadow: none; }
+.dg-axis-pill.thin i { width: 13px; height: 13px; font-size: 8px; }
+.dg-axis-pill.thin span { max-width: 200px; font-size: 10.5px; font-weight: 500; }
+.dg-rail.dg-v .dg-axis-pill.thin { margin: 0 0 0 -9px; }
+.dg-axis-pill.tight span { max-width: 0; opacity: 0; }
+.dg-ghost { z-index: 1; pointer-events: auto; transition: none; }
+.dg-ghost .dg-chip { scale: 0.8; opacity: 0.55; }
+.dg-ghost:hover .dg-chip { scale: 0.9; opacity: 0.85; }
+.dg-rail .dg-st.dg-ghost .dg-lbl { left: 25px; top: 50%; bottom: auto; flex-direction: row; align-items: baseline; gap: 6px; max-width: none; text-align: left; transform: translateY(-50%); }
+.dg-ghost .dg-lbl b { font-size: 12px; color: var(--fg-muted); }
+.dg-ghost .dg-lbl span { font: 10.5px var(--mono); }
+.dg-st.ghosted { opacity: 0; pointer-events: none; }
+
+/* EL SELLO: arriba a la derecha, de dos líneas, el proyecto y el prompt, y la rama */
+.dg-stamp {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    z-index: 3;
+    display: flex;
+    align-items: stretch;
+    background: color-mix(in srgb, var(--tip) 90%, transparent);
+    border: 1px solid var(--ink, var(--track-edge));
+    border-radius: 7px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    transition: right 0.3s ease, top 0.3s ease;
+}
+.dg-stamp[hidden] { display: none; }
+/* La rama, una casilla más del sello, entre lo que se ve y la escala; en un hueco estrecho o en vertical, la única. En
+   el Diagrama, la rama del directo solo deja su lista, que cuelga del sello */
+.dg-stamp-git { display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 320px; padding: 5px 11px 6px 9px; font: inherit; color: var(--fg); text-align: left; background: none; border: 0; border-left: 1px solid var(--track-edge); cursor: pointer; pointer-events: auto; }
+.dg-stamp-git:hover { background: var(--button-hover); }
+.dg-stamp-git[hidden] { display: none; }
+.dg-git-disc { display: grid; flex: none; place-items: center; width: 24px; height: 24px; color: #fff; background: var(--dg-read); border-radius: 50%; }
+.dg-git-disc .flow-icon { width: 13px; height: 13px; }
+.dg-git-words { display: flex; flex-direction: column; min-width: 0; }
+.dg-git-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dg-git-name b { overflow: hidden; font: 700 12.5px/1.25 Consolas, "Cascadia Mono", monospace; color: var(--fg-title); white-space: nowrap; text-overflow: ellipsis; }
+.dg-git-caret { flex: none; font-size: 10px; color: var(--fg-faint); }
+.dg-git-state { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--fg-faint); white-space: nowrap; }
+.dg-git-state .chg-num { margin-left: 0; font-size: 10.5px; }
+.dg-git-up { font-weight: 600; color: var(--dg-read); }
+.dg-git-pending { font-weight: 600; color: var(--st-waiting); }
+.dg-git-ok { font-weight: 600; color: #3fb950; }
+:root[data-theme="light"] .dg-git-pending { color: #b07a00; }
+:root[data-theme="light"] .dg-git-ok { color: #1f9d3a; }
+.dg-stamp.compact .dg-stamp-what { display: none; }
+.dg-stamp.compact .dg-stamp-git { border-left: 0; border-radius: 6px; }
+.flow-git.in-stamp .flow-git-head { display: none; }
+.dg-stamp-what { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 5px 11px 6px; }
+.dg-stamp-what b { font-size: 12.5px; font-weight: 700; line-height: 1.25; color: var(--fg-title); white-space: nowrap; }
+.dg-stamp-what span { font-size: 10.5px; color: var(--fg-faint); white-space: nowrap; }
+
+/* LA REGLA DE PASOS: en medio de la franja de abajo, a lo ancho del hueco que dejan el estado y los controles */
+.dg-ruler-slot { position: relative; flex: 1 1 auto; align-self: stretch; min-width: 120px; }
+.dg-ruler { position: absolute; inset: 3px 6px; z-index: 1; cursor: pointer; touch-action: none; }
+.dg-ruler::before { content: ""; position: absolute; left: 0; right: 0; bottom: 5px; height: 1px; background: var(--ink); }
+.dg-ruler-marks { position: absolute; left: 0; right: 0; bottom: 5px; width: 100%; height: 13px; overflow: visible; }
+.dg-ruler-mark { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.dg-ruler-brush { position: absolute; top: 1px; bottom: 1px; min-width: 6px; background: color-mix(in srgb, var(--fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--fg-muted) 70%, transparent); border-radius: 4px; pointer-events: none; }
+.dg-ruler.glide .dg-ruler-brush { transition: left 0.6s var(--glide), width 0.6s var(--glide); }
+.dg-ruler-cursor { position: absolute; top: -1px; bottom: 1px; width: 2px; margin-left: -1px; background: var(--fg-muted); border-radius: 1px; pointer-events: none; transition: left 0.5s var(--glide); }
+.dg-ruler:is(.live, .replay) .dg-ruler-cursor { background: var(--danger); box-shadow: 0 0 6px color-mix(in srgb, var(--danger) 70%, transparent); }
+.dg-ruler-label {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 7px;
+    padding: 1px 6px;
+    font: 10px var(--mono);
+    color: var(--fg-muted);
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--tip) 92%, transparent);
+    border: 1px solid var(--track-edge);
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+    transform: translateX(-50%);
+}
+.dg-ruler:is(.live, .replay) .dg-ruler-label { color: var(--danger); }
+.dg-ruler:hover::before { background: var(--fg-muted); }
+
+/* LA BARRA DE ABAJO: en el diagrama, una franja a lo ancho, con el estado a la izquierda, la regla de pasos en medio y
+   los controles en iconos a la derecha. Los iconos van como máscara, para no tocar la barra del directo */
+.flow-dock:not(.dg) .dg-only { display: none; }
+.flow-dock.dg { left: 14px; align-items: stretch; }
+.flow-dock.dg .flow-tools { flex-wrap: nowrap; justify-content: flex-start; gap: 6px; padding: 4px 6px 4px 8px; border-radius: 12px; }
+.flow-dock.dg .flow-status { flex: none; max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+.flow-dock.dg .flow-scope { flex: none; }
+.flow-dock.dg :is([data-scope], [data-far]) { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; font-size: 0; }
+.flow-dock.dg :is([data-scope], [data-far])::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    background: currentColor;
+    -webkit-mask: var(--ico) center / contain no-repeat;
+    mask: var(--ico) center / contain no-repeat;
+}
+.flow-dock.dg [data-scope="current"] { --ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M8 2a3 3 0 1 1 0 6a3 3 0 1 1 0-6zM2.5 14c.5-3 2.7-4.5 5.5-4.5s5 1.5 5.5 4.5'/></svg>"); }
+.flow-dock.dg [data-scope="all"] { --ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M3 1.5h10v13H3zM5.5 5h5M5.5 8h5M5.5 11h3'/></svg>"); }
+.flow-dock.dg [data-far="0"] { --ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.3 10.3l3.5 3.5M5 7h4M7 5v4'/></svg>"); }
+.flow-dock.dg [data-far="1"] { --ico: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M7 2.5a4.5 4.5 0 1 1 0 9a4.5 4.5 0 1 1 0-9zM10.3 10.3l3.5 3.5M5 7h4'/></svg>"); }
+.flow-dock.dg .flow-follow { flex: none; justify-content: center; width: 30px; padding: 0; gap: 0; font-size: 0; }
+.flow-dock.dg :is(.flow-zoom, .flow-sep, #flow-fit) { flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .dg-st, .dg-here, .dg-lines path, .dg-gap, .dg-ruler-cursor, .dg-ruler-brush, .dg-axis-pill, .dg-axis-pill span { transition: none !important; }
+    .dg-st.now .dg-chip, .dg-st.final.unread .dg-chip, .dg-wait-line, .dg-lines path.dg-current.on, .dg-st.busy .dg-chip::after, .dg-st.asking .dg-chip::after { animation: none; }
+}

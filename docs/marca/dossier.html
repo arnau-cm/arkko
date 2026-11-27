@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arkko · Dossier de marca</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0C; --panel: #141416; --panel-2: #1B1B1E; --line: #2A2A2E;
+    --fg: #E6E3DC; --muted: #9A968F; --faint: #66625C; --green: #3FB950;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 Geist, system-ui, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 20px 96px; }
+  a { color: var(--green); }
+  h1, h2, h3 { letter-spacing: -.03em; line-height: 1.15; }
+  h2 { font-size: 30px; margin: 0 0 6px; }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  p { margin: 0 0 12px; max-width: 720px; }
+  .muted { color: var(--muted); }
+  .eyebrow { font: 500 12px 'Geist Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+  section { padding: 72px 0 0; }
+  code, .mono { font-family: 'Geist Mono', Consolas, monospace; font-size: .92em; }
+
+  /* Portada */
+  .cover { min-height: min(88vh, 760px); display: flex; flex-direction: column; justify-content: center; gap: 28px; padding-top: 40px; }
+  .cover .brand { display: flex; align-items: center; gap: 22px; }
+  .cover .brand .name { font: 700 76px/1 Geist, sans-serif; letter-spacing: -.05em; }
+  .cover .claim { font: 600 44px/1.1 Geist, sans-serif; letter-spacing: -.04em; max-width: 680px; }
+  .cover .claim em, .claim em { font-style: normal; color: var(--green); }
+  .cover .meta { color: var(--faint); font: 13px 'Geist Mono', monospace; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+  nav.toc a { color: var(--muted); text-decoration: none; font-size: 14px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 99px; }
+  nav.toc a:hover { color: var(--fg); border-color: var(--faint); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .card b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .card p { color: var(--muted); font-size: 15px; margin: 0; }
+
+  /* Logo */
+  .variants { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+  @media (max-width: 720px) { .variants { grid-template-columns: 1fr; } }
+  .variant { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .variant .stage { display: grid; place-items: center; padding: 34px 0 26px; background: var(--panel-2); }
+  .variant .stage.light { background: #E4E1DA; }
+  .variant .sizes { display: flex; align-items: flex-end; justify-content: center; gap: 14px; padding: 16px; border-top: 1px solid var(--line); }
+  .variant .sizes.light { background: #E4E1DA; border-top-color: #CFCBC3; }
+  .variant .info { padding: 16px 20px 20px; }
+  .variant .info b { font-size: 18px; }
+  .variant .info p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  .badge { display: inline-block; font: 500 11px 'Geist Mono', monospace; padding: 2px 8px; border-radius: 99px; background: rgba(63,185,80,.14); color: var(--green); margin-left: 8px; vertical-align: 3px; }
+
+  .anatomy { display: grid; grid-template-columns: 260px 1fr; gap: 28px; align-items: center; margin-top: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .anatomy ol { margin: 0; padding-left: 20px; color: var(--muted); }
+  .anatomy ol li { margin-bottom: 8px; }
+  .anatomy ol b { color: var(--fg); }
+  @media (max-width: 720px) { .anatomy { grid-template-columns: 1fr; } }
+
+  .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .rules div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .rules ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+  .rules .yes b { color: var(--green); }
+  .rules .no b { color: #F78166; }
+  @media (max-width: 720px) { .rules { grid-template-columns: 1fr; } }
+
+  /* Paleta */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 18px; }
+  .swatch { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+  .swatch .chip { height: 92px; }
+  .swatch .txt { padding: 10px 14px 14px; font-size: 14px; }
+  .swatch .txt span { display: block; color: var(--muted); font: 12px 'Geist Mono', monospace; }
+
+  /* Tipografía */
+  .type { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .type div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .type .big { font-size: 44px; font-weight: 700; letter-spacing: -.04em; line-height: 1; margin: 8px 0 12px; }
+  .type .big.mono { font: 500 38px 'Geist Mono', monospace; letter-spacing: -.02em; }
+  @media (max-width: 720px) { .type { grid-template-columns: 1fr; } }
+
+  /* Eslóganes */
+  .primary-claim { margin-top: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 34px 30px; }
+  .primary-claim .claim { font: 600 46px/1.1 Geist, sans-serif; letter-spacing: -.04em; }
+  .claims { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .claims div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .claims q { quotes: none; display: block; font: 600 20px/1.25 Geist, sans-serif; letter-spacing: -.02em; }
+  .claims span { display: block; color: var(--muted); font-size: 14px; margin-top: 8px; }
+
+  /* Tono */
+  table.voice { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 15px; }
+  table.voice th { text-align: left; color: var(--muted); font-weight: 500; font-size: 13px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  table.voice td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.voice td.ok { color: var(--fg); }
+  table.voice td.ko { color: var(--faint); text-decoration: line-through; text-decoration-color: rgba(247,129,102,.5); }
+
+  /* Aplicaciones */
+  .hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-top: 18px; }
+  .banner { border-radius: 16px; padding: 32px 28px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--line); }
+  .banner.dark { background: #0F0F11; }
+  .banner.light { background: #E4E1DA; color: #0B0B0C; border-color: #CFCBC3; }
+  .banner .brand { display: flex; align-items: center; gap: 12px; font: 700 26px Geist, sans-serif; letter-spacing: -.03em; }
+  .banner .claim { font: 600 30px/1.15 Geist, sans-serif; letter-spacing: -.03em; }
+  .banner .sub { font-size: 14px; opacity: .65; }
+  .banner .cta { align-self: flex-start; font: 500 13px 'Geist Mono', monospace; padding: 8px 14px; border-radius: 8px; background: var(--green); color: #0B0B0C; }
+  .taskbar { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 16px; border-radius: 12px; background: #202024; border: 1px solid var(--line); }
+  .taskbar .ph { width: 24px; height: 24px; border-radius: 6px; background: #3a3a40; opacity: .6; }
+  .taskbar .me { position: relative; }
+  .taskbar .me::after { content: ""; position: absolute; bottom: -7px; left: 50%; width: 12px; height: 3px; margin-left: -6px; border-radius: 2px; background: var(--green); }
+  .taskbar small { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+  /* Comando */
+  .term { margin-top: 18px; background: #0F0F11; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .term .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .term .bar i { width: 10px; height: 10px; border-radius: 50%; background: #2E2E33; }
+  .term pre { margin: 0; padding: 18px 20px; font: 14px/1.7 'Geist Mono', Consolas, monospace; color: #CFCBC3; overflow-x: auto; }
+  .term .p { color: var(--green); }
+  .term .d { color: var(--faint); }
+  .term .w { color: #F5A623; }
+  table.cmds { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 15px; }
+  table.cmds th { text-align: left; color: var(--muted); font-weight: 500; font-size: 13px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  table.cmds td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmds td:first-child { white-space: nowrap; font-family: 'Geist Mono', monospace; color: var(--green); }
+  table.cmds td:last-child { color: var(--muted); font-size: 14px; }
+  .wrap-x { overflow-x: auto; }
+
+  .todo { margin-top: 18px; display: grid; gap: 10px; }
+  .todo div { display: flex; gap: 12px; align-items: baseline; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+  .todo div::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--faint); transform: translateY(1px); }
+  .todo span { color: var(--muted); }
+  .todo div.done { opacity: .7; }
+  .todo div.done::before { content: "✓"; border: 0; width: 10px; height: auto; color: var(--green); font-weight: 700; transform: none; }
+  .todo div.doing::before { border-color: var(--green); background: linear-gradient(90deg, var(--green) 50%, transparent 50%); }
+  footer { margin-top: 80px; color: var(--faint); font: 13px 'Geist Mono', monospace; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="3" result="fine"/>
+      <feColorMatrix in="fine" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.6 1.2" result="raw"/>
+      <feColorMatrix in="raw" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0" result="pores"/>
+      <feComposite in="pores" in2="SourceGraphic" operator="in" result="pores-in"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pores-in"/></feMerge>
+    </filter>
+    <!-- Un halo del color de la tecla alrededor de la letra, para separarla de la órbita -->
+    <filter id="halo" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="3.5"/></filter>
+  </defs>
+</svg>
+<main>
+
+  <!-- PORTADA -->
+  <div class="cover">
+    <div class="eyebrow">Dossier de marca · borrador · 2026-10-27</div>
+    <div class="brand"><span data-icon="plana" data-size="96" data-theme="dark"></span><span class="name">Arkko</span></div>
+    <div class="claim">Where agents build, and you <em>lead</em>.</div>
+    <p class="muted">El sitio desde donde un desarrollador dirige a sus agentes: planifica, lanza, revisa y guarda todo lo hecho. Este dossier recoge el nombre, el logo, la paleta, los eslóganes y la voz de la marca, y una idea de producto que sale de ella: el comando <code>ak</code>.</p>
+    <nav class="toc">
+      <a href="#idea">Idea</a><a href="#nombre">Nombre</a><a href="#logo">Logo</a><a href="#paleta">Paleta</a>
+      <a href="#tipografia">Tipografía</a><a href="#esloganes">Eslóganes</a><a href="#voz">Voz</a>
+      <a href="#aplicaciones">Aplicaciones</a><a href="#comando">El comando ak</a><a href="#pendiente">Pendiente</a>
+    </nav>
+    <div class="meta">Sustituye a Agent Pulse · rama feature/nuevo-nombre-e-icono · tareas M1 y M2</div>
+  </div>
+
+  <!-- IDEA -->
+  <section id="idea">
+    <div class="eyebrow">01 · La idea</div>
+    <h2>Tú diriges. Los agentes construyen.</h2>
+    <p>El desarrollador ya no escribe todo el código: dirige a un equipo de agentes que trabajan a la vez, en varias ramas y tareas. Lo difícil ya no es escribir, es no perder el control: saber quién te espera, qué ha cambiado, cuánto ha costado y qué falta por revisar.</p>
+    <p>Arkko no vende velocidad, que es lo que venden todos. Vende <b>criterio y control</b>: un método para trabajar con agentes y un único sitio desde donde verlo y decidirlo todo.</p>
+    <div class="cards">
+      <div class="card"><b>Lead</b><p>Tú decides y los agentes ejecutan. La app te avisa cuando te necesitan y te deja decidir rápido.</p></div>
+      <div class="card"><b>Structure</b><p>Método (SDD y ODD), un stack base de agentes y skills, y un diario de todo lo que se hizo.</p></div>
+      <div class="card"><b>One place</b><p>Tablero, worktrees, sesiones, revisión de PR, terminal, gasto y estadísticas. Sin cambiar de herramienta.</p></div>
+    </div>
+  </section>
+
+  <!-- NOMBRE -->
+  <section id="nombre">
+    <div class="eyebrow">02 · El nombre</div>
+    <h2>Arkko</h2>
+    <p>De <i>arch</i>: arquitectura y construir software. Corto, se dice igual en inglés y en castellano, y no se ata a ningún proveedor de IA, porque la app leerá también Codex y otras fuentes.</p>
+    <p>La <b>doble K</b> es una decisión de estética y de ritmo: da carácter al nombre, lo hace más fácil de registrar y de encontrar libre, y es la que da sentido al logo, la ligadura AK.</p>
+    <p class="muted">Se escribe <b>Arkko</b> en texto y <code>arkko</code> en contextos técnicos (paquete, repositorio, ejecutable). Nunca ARKKO ni ArKKo.</p>
+  </section>
+
+  <!-- LOGO -->
+  <section id="logo">
+    <div class="eyebrow">03 · El logo</div>
+    <h2>La AK sobre una tecla</h2>
+    <p>La A y la K comparten el trazo vertical, con trazos gruesos que acaban en punta. La ligadura va grabada en una tecla plana, con su piloto verde encendido: la herramienta que tocas cada día. Ninguna herramienta de agentes usa una tecla como logo; las que la usan son utilidades de teclado, por eso aquí <b>la letra manda sobre la tecla</b>.</p>
+
+    <div class="anatomy">
+      <span data-icon="plana" data-size="220" data-theme="dark"></span>
+      <ol>
+        <li><b>La tecla plana.</b> Gris de tecla, con un borde inferior apenas visible. Es el soporte, no el protagonista.</li>
+        <li><b>La ligadura AK.</b> La A y la K comparten el trazo vertical. Cada trazo empieza grueso, con un corte limpio, y acaba en punta. Ocupa casi toda la cara de la tecla.</li>
+        <li><b>El piloto verde.</b> Arriba a la derecha, como el de una tecla de bloqueo: algo está encendido. Es el único color.</li>
+      </ol>
+    </div>
+
+    <h3>Las cuatro versiones de la tecla</h3>
+    <p class="muted">La misma AK y el mismo verde, en un solo sitio cada vez: en el piloto, en el brazo o en el punto de la órbita. La tecla plana es la principal; las otras, para usos concretos.</p>
+    <div class="variants" id="variants"></div>
+
+    <h3>Cómo se usa</h3>
+    <div class="rules">
+      <div class="yes"><b>Sí</b><ul>
+        <li>Sobre negro o sobre gris claro, con aire alrededor.</li>
+        <li>El verde en un solo sitio: el piloto, el brazo o el punto de la órbita.</li>
+        <li>Para 16 a 32 px, la versión pequeña: la tecla con brazo verde, con menos borde y la letra más grande. Por debajo, solo la AK sin tecla.</li>
+        <li>El icono de la app es la tecla con brazo verde, a todos los tamaños; las notificaciones, solo la AK sin tecla, clara u oscura según el modo de Windows.</li>
+        <li>Junto al nombre en Geist, a la misma altura que la x.</li>
+      </ul></div>
+      <div class="no"><b>No</b><ul>
+        <li>Cambiar el verde por otro color, o añadir un segundo color.</li>
+        <li>Degradados, sombras de moda, brillos o 3D.</li>
+        <li>Girar, deformar o separar la A de la K.</li>
+        <li>Mascotas ni dibujos acompañando al logo.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- PALETA -->
+  <section id="paleta">
+    <div class="eyebrow">04 · Paleta</div>
+    <h2>Negro, gris de tecla y un verde</h2>
+    <p>Una sola tinta y un único acento. El verde tiene un significado y no se usa como adorno: <b>está listo, está bien, adelante</b>. Es el verde de una build que pasa, de una PR aprobada, de un <code>+</code> en un diff.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#0B0B0C"></div><div class="txt">Negro<span>#0B0B0C</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#1B1B1E"></div><div class="txt">Tecla oscura<span>#1B1B1E</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#2C2C31"></div><div class="txt">Cara de tecla<span>#2C2C31</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#B3AFA7"></div><div class="txt">Gris claro<span>#B3AFA7</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#E6E3DC"></div><div class="txt">Hueso<span>#E6E3DC</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#3FB950"></div><div class="txt">Verde<span>#3FB950</span></div></div>
+    </div>
+  </section>
+
+  <!-- TIPOGRAFÍA -->
+  <section id="tipografia">
+    <div class="eyebrow">05 · Tipografía</div>
+    <h2>Geist y Geist Mono</h2>
+    <p>Dos familias de la misma casa, libres (licencia OFL) y pensadas para interfaces de desarrollo. Geist para titulares y texto; Geist Mono para comandos, código y datos.</p>
+    <div class="type">
+      <div><span class="muted">Geist · titulares y texto</span><div class="big">Arkko</div><span class="muted">Aa Bb Cc 0123456789 — Where agents build.</span></div>
+      <div><span class="muted">Geist Mono · comandos y código</span><div class="big mono">ak status</div><span class="muted mono">0x41 0x72 0x6B 0x6B 0x6F</span></div>
+    </div>
+  </section>
+
+  <!-- ESLÓGANES -->
+  <section id="esloganes">
+    <div class="eyebrow">06 · Eslóganes</div>
+    <h2>En inglés, cortos y con una palabra en verde</h2>
+    <div class="primary-claim">
+      <div class="muted" style="font-size:13px;margin-bottom:10px">Principal</div>
+      <div class="claim">Where agents build, and you <em>lead</em>.</div>
+    </div>
+    <div class="claims">
+      <div><q>Build with agents. Ship with structure.</q><span>El más «de producto». Para la web y las tiendas.</span></div>
+      <div><q>Less babysitting. More building.</q><span>El más cercano: lo entiende cualquiera que haya vigilado una sesión. Para redes y charlas.</span></div>
+      <div><q>Agents do the work. You make the calls.</q><span>Refuerza el «lead». Para presentaciones.</span></div>
+      <div><q>One place. All your agents. Every step.</q><span>Para explicar el «todo en uno» en la web o el README.</span></div>
+      <div><q>Stay in the loop. Stay in control.</q><span>Para avisos, revisión y seguridad.</span></div>
+    </div>
+  </section>
+
+  <!-- VOZ -->
+  <section id="voz">
+    <div class="eyebrow">07 · Voz</div>
+    <h2>Como un buen jefe técnico</h2>
+    <p>Tranquila, precisa, de oficio, con un punto de humor seco. Frases cortas que dicen qué pasa y qué hacer. Sin hype, sin «10x», sin emojis.</p>
+    <div class="wrap-x"><table class="voice">
+      <tr><th>Momento</th><th>Así</th><th>Así no</th></tr>
+      <tr><td>Un agente espera</td><td class="ok">feature/login is waiting for you.</td><td class="ko">¡Tu agente necesita ayuda! 🙌</td></tr>
+      <tr><td>Sin sesiones</td><td class="ok">No agents running. Enjoy the quiet.</td><td class="ko">¡Vaya! Aún no hay nada por aquí 😅</td></tr>
+      <tr><td>Build en verde</td><td class="ok">All checks passed. Ready to ship.</td><td class="ko">🚀 ¡Increíble! ¡Todo listo para despegar!</td></tr>
+      <tr><td>Gasto alto</td><td class="ok">This session has used 80% of today's budget.</td><td class="ko">⚠️ ¡CUIDADO! ¡Estás gastando muchísimo!</td></tr>
+    </table></div>
+  </section>
+
+  <!-- APLICACIONES -->
+  <section id="aplicaciones">
+    <div class="eyebrow">08 · Aplicaciones</div>
+    <h2>Cabeceras y barra de tareas</h2>
+    <div class="hero">
+      <div class="banner dark"><div class="brand"><span data-icon="plana" data-size="40" data-theme="dark"></span>Arkko</div>
+        <div class="claim">Where agents build,<br>and you <em>lead</em>.</div>
+        <div class="sub">Plan, run and review every agent session from one desktop app.</div><span class="cta">$ ak new</span></div>
+      <div class="banner light"><div class="brand"><span data-icon="orbita" data-size="40" data-theme="light"></span>Arkko</div>
+        <div class="claim">Build with agents.<br>Ship with <em>structure</em>.</div>
+        <div class="sub">Spec-driven workflows, a base stack of agents and skills, and a record of everything they did.</div><span class="cta">$ ak spec</span></div>
+      <div class="banner dark"><div class="brand"><span data-icon="brazo" data-size="40" data-theme="dark"></span>Arkko</div>
+        <div class="claim">Less babysitting.<br>More <em>building</em>.</div>
+        <div class="sub">Know when an agent needs you, what it cost and what it changed.</div><span class="cta">$ ak status</span></div>
+    </div>
+    <div id="taskbars"></div>
+  </section>
+
+  <!-- COMANDO -->
+  <section id="comando">
+    <div class="eyebrow">09 · El comando ak · propuesta, tarea M2</div>
+    <h2>El logo es lo que tecleas</h2>
+    <p>Un CLI corto, <code>ak</code>, para hacer desde la terminal lo que hoy se hace en la ventana, y para recorrer el ciclo guiado cuando se integre el stack de agentes y skills. La marca deja de ser un dibujo: es el comando que escribes cada día.</p>
+    <div class="term"><div class="bar"><i></i><i></i><i></i></div><pre><span class="p">$</span> ak status
+<span class="d">3 agents running · 1 waiting · 12,40 € today</span>
+
+  <span class="w">●</span> DEVLAB-142  feature/login        waiting for you · 4 min
+  <span class="p">●</span> DEVLAB-139  feature/export-csv   working · tests
+  <span class="p">●</span> DEVLAB-120  fix/retention        working · review notes
+
+<span class="p">$</span> ak new DEVLAB-151
+<span class="d">worktree  ../claude-stats-DEVLAB-151
+branch    feature/DEVLAB-151
+stack     base · 6 agents · 14 skills</span>
+<span class="p">✓</span> Session started. Next: <span class="p">ak spec</span></pre></div>
+
+    <div class="wrap-x"><table class="cmds">
+      <tr><th>Comando</th><th>Qué hace</th><th>De dónde sale</th></tr>
+      <tr><td>ak new CLAVE</td><td>Toma la tarea del tablero, crea su worktree y abre una sesión con el stack base.</td><td>Tareas y worktrees; la 52.7</td></tr>
+      <tr><td>ak spec</td><td>Empieza el ciclo SDD: propone la especificación de la tarea.</td><td>El stack (<code>/opsx:propose</code>)</td></tr>
+      <tr><td>ak grow</td><td>Empieza el ciclo ODD: avanzar por pasos pequeños, dejando crecer el diseño.</td><td>El stack</td></tr>
+      <tr><td>ak status</td><td>Quién trabaja, quién te espera y cuánto se lleva gastado hoy.</td><td>Sesiones y estadísticas</td></tr>
+      <tr><td>ak review</td><td>Abre la revisión de la rama o de una PR, con sus notas.</td><td>El modo revisión (74)</td></tr>
+      <tr><td>ak ship</td><td>Crea la PR o la integra cuando todo está en verde.</td><td>Git y el tablero</td></tr>
+      <tr><td>ak log</td><td>El parte del día por tarea, listo para la daily o para imputar horas.</td><td>Diario («Copiar parte»)</td></tr>
+      <tr><td>ak cost</td><td>El gasto por tarea, proyecto o periodo.</td><td>Estadísticas</td></tr>
+      <tr><td>ak stack</td><td>Instala o actualiza el stack base de agentes y skills.</td><td>arkko-stack</td></tr>
+      <tr><td>ak open</td><td>Abre Arkko en la sesión o la tarea actual.</td><td>La ventana</td></tr>
+    </table></div>
+    <p class="muted" style="margin-top:14px">Empieza con el cambio de nombre (M1.7), donde <code>ccstats.exe</code> pasa a ser <code>ak.exe</code> con lo que ya hace; el resto de comandos, después de integrar el stack.</p>
+  </section>
+
+  <!-- PENDIENTE -->
+  <section id="pendiente">
+    <div class="eyebrow">10 · Pendiente</div>
+    <h2>Antes de anunciar nada</h2>
+    <div class="todo">
+      <div class="doing"><b>El cambio en la app</b><span>En curso: la tarea M1, en nueve pasos. Todo pasa a Arkko, también los nombres técnicos, sin perder nada de lo guardado. Hecho el paso 1, los iconos.</span></div>
+      <div><b>Marca registrada</b><span>«Arkko» en la clase 9 (software), en la EUIPO y en la OEPM.</span></div>
+      <div><b>Dominios y nombres</b><span><code>arkko.dev</code>, <code>arkko.app</code>, la organización en GitHub y el paquete <code>ak</code>.</span></div>
+      <div class="done"><b>Los iconos finales</b><span>Hecho: SVG de las cuatro teclas, la versión para tamaños pequeños y la letra sola (<code>assets/arkko/svg</code>); PNG de 16 a 1024 y el ICO (<code>assets/arkko</code>). Se rehacen con <code>scripts/marca</code>.</span></div>
+      <div class="done"><b>Búsquedas</b><span>Comprobado: «Arkko» apenas se busca y el apellido no compite. El riesgo es que el buscador lo corrija a «Arko» (ARKO Corp, Arkio); se evita escribiéndolo siempre igual, con contexto («Arkko app») y con dominio propio.</span></div>
+    </div>
+    <h3>Ideas para más adelante</h3>
+    <div class="cards">
+      <div class="card"><b>El logo vivo</b><p>El piloto del icono en la barra de tareas cambia con el estado: verde en marcha, ámbar si un agente te espera, rojo si algo falla.</p></div>
+      <div class="card"><b>El guiño hex</b><p><code>41 72 6B 6B 6F</code> es «Arkko» en ASCII. Para el «Acerca de» o la pantalla de carga.</p></div>
+      <div class="card"><b>La órbita en marcha</b><p>En la pantalla de carga y en la web, el punto verde de la tecla con órbita da la vuelta mientras algo se prepara.</p></div>
+    </div>
+  </section>
+
+  <footer>Arkko · dossier de marca · borrador del 2026-10-27 · el logo en SVG, en assets/arkko/svg/ · los bocetos, en assets/arkko/bocetos/</footer>
+</main>
+
+<script>
+const GREEN = '#3FB950';
+const themes = {
+  dark:  { skirt: '#1B1B1E', edge: '#34343A', top: '#2C2C31', legend: '#D9D5CD', orbit: '#55524D' },
+  light: { skirt: '#8C8880', edge: '#A6A29A', top: '#C8C4BC', legend: '#0B0B0C', orbit: '#7A766F' }
+};
+
+// Un trazo que se afila: del punto 1 al 2, con grosor al inicio, en medio y al final
+function stroke(x1, y1, x2, y2, ws, wm, we, bend = 0) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const side = s => {
+    const A = [x1 + nx * ws / 2 * s, y1 + ny * ws / 2 * s];
+    const M = [mx + nx * wm / 2 * s, my + ny * wm / 2 * s];
+    const B = [x2 + nx * we / 2 * s, y2 + ny * we / 2 * s];
+    return { A, B, C: [2 * M[0] - (A[0] + B[0]) / 2, 2 * M[1] - (A[1] + B[1]) / 2] };
+  };
+  const a = side(1), b = side(-1), f = n => n.toFixed(1);
+  return `M${f(a.A[0])} ${f(a.A[1])} Q${f(a.C[0])} ${f(a.C[1])} ${f(a.B[0])} ${f(a.B[1])} L${f(b.B[0])} ${f(b.B[1])} Q${f(b.C[0])} ${f(b.C[1])} ${f(b.A[0])} ${f(b.A[1])} Z`;
+}
+
+// La AK Cuchilla: cada trazo empieza grueso, con un corte limpio, y acaba en punta. El brazo puede ir en otro color.
+const cuchilla = (ink, armInk = ink) => `
+  <path d="${stroke(60, 30, 28, 98, 14, 10, 1)}" fill="${ink}"/>
+  <path d="${stroke(60, 30, 60, 98, 14, 11, 2)}" fill="${ink}"/>
+  <path d="${stroke(62, 68, 98, 98, 12, 8, 1)}" fill="${ink}"/>
+  <path d="${stroke(62, 68, 98, 32, 12, 8, 1)}" fill="${armInk}"/>`;
+const at = (cx, cy, s, body) => `<g transform="translate(${cx} ${cy}) scale(${s}) translate(-63 -64)">${body}</g>`;
+const led = (x, y) => `<rect x="${x}" y="${y}" width="14" height="5" rx="2.5" fill="${GREEN}"/>`;
+
+// Las cuatro versiones de la tecla. En todas, el verde está en un solo sitio.
+const variants = {
+  plana: { name: 'Tecla plana', main: true,
+    note: 'La AK en el centro de la tecla y el piloto verde arriba a la derecha, como el de una tecla de bloqueo. La versión principal.',
+    draw: t => at(60, 58, .6, cuchilla(t.legend)) + led(88, 22) },
+  leyenda: { name: 'Tecla con leyenda',
+    note: 'Como en un teclado de verdad: la AK pequeña arriba a la izquierda y el piloto abajo. Para piezas grandes (portada, web, pantalla de carga); en pequeño la letra desaparece.',
+    draw: t => at(46, 42, .4, cuchilla(t.legend)) + led(84, 86) },
+  brazo: { name: 'Tecla con brazo verde',
+    note: 'Sin piloto: el verde pasa al brazo de la K. La más limpia y la que mejor se distingue a 16 px; buena para el favicon y la barra de tareas.',
+    draw: t => at(62, 58, .62, cuchilla(t.legend, GREEN)) },
+  orbita: { name: 'Tecla con órbita',
+    note: 'Una órbita fina alrededor de la AK, con el punto verde haciendo de piloto: tú en el centro, los agentes girando. Para piezas grandes; en pequeño se ensucia.',
+    draw: t => `<ellipse cx="64" cy="58" rx="40" ry="17" transform="rotate(-28 64 58)" fill="none" stroke="${t.orbit}" stroke-width="2.2"/>
+      <g filter="url(#halo)">${at(64, 58, .56, cuchilla(t.top))}</g>${at(64, 58, .56, cuchilla(t.legend))}
+      <circle cx="96" cy="37" r="6" fill="${GREEN}"/>` }
+};
+
+function keycap(key, th) {
+  const t = themes[th];
+  return `<rect x="7" y="8" width="114" height="114" rx="26" fill="${t.skirt}" stroke="${t.edge}" stroke-width="1.5"/>
+    <rect x="16" y="12" width="96" height="92" rx="19" fill="${t.top}" filter="url(#grain)"/>
+    ${variants[key].draw(t)}`;
+}
+const icon = (k, th, s) => `<svg width="${s}" height="${s}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Arkko">${keycap(k, th)}</svg>`;
+
+document.querySelectorAll('[data-icon]').forEach(el => {
+  el.innerHTML = icon(el.dataset.icon, el.dataset.theme || 'dark', +el.dataset.size);
+});
+
+document.getElementById('variants').innerHTML = Object.entries(variants).map(([k, V]) => `
+  <div class="variant">
+    <div class="stage">${icon(k, 'dark', 150)}</div>
+    <div class="sizes">${[16, 20, 32, 48, 64].map(s => icon(k, 'dark', s)).join('')}</div>
+    <div class="stage light">${icon(k, 'light', 96)}</div>
+    <div class="sizes light">${[16, 20, 32, 48].map(s => icon(k, 'light', s)).join('')}</div>
+    <div class="info"><b>${V.name}</b>${V.main ? '<span class="badge">principal</span>' : ''}<p>${V.note}</p></div>
+  </div>`).join('');
+
+document.getElementById('taskbars').innerHTML = Object.entries(variants).map(([k, V]) => `
+  <div class="taskbar"><span class="ph"></span><span class="ph"></span><span class="ph"></span><span class="me">${icon(k, 'dark', 26)}</span><span class="ph"></span><span class="ph"></span><small>${V.name}, a 26 px</small></div>`).join('');
+</script>
+</body>
+</html>

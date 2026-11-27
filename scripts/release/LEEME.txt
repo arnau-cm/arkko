@@ -1,0 +1,25 @@
+ARKKO - version de trabajo (WIP)
+================================
+
+Arkko esta en desarrollo: se usa a diario, pero no esta terminada.
+Lo que funciona y lo que falta: https://github.com/arnau-cm/arkko/blob/main/docs/estado.md
+
+Requisitos
+- Windows 10 u 11 (x64) y WebView2 (viene con Windows 11 y con Edge).
+- Claude Code instalado y usado al menos una vez.
+- No hace falta .NET ni permisos de administrador.
+
+Instalar
+1. Descomprime el zip entero en una carpeta.
+2. Abre PowerShell en esa carpeta y ejecuta:
+     powershell -ExecutionPolicy Bypass -File .\instalar.ps1
+3. Reinicia las sesiones de Claude Code abiertas.
+
+Desinstalar
+     powershell -ExecutionPolicy Bypass -File .\instalar.ps1 -Desinstalar
+
+Aviso
+Los ejecutables no estan firmados. Windows (SmartScreen o Smart App Control) puede avisar o
+bloquearlos: en el aviso de SmartScreen, "Mas informacion" -> "Ejecutar de todas formas".
+
+Copyright (c) 2026 Arnau Calleja. Todos los derechos reservados (ver LICENSE.txt).

@@ -1,0 +1,33 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- TEMA SÓLIDO: negro opaco, sin cristal ni brillo; lo que no cambia aquí lo pone el oscuro -->
+    <SolidColorBrush x:Key="Fg" Color="#F5F6F8" />
+    <SolidColorBrush x:Key="FgStrong" Color="#F5F6F8" />
+    <SolidColorBrush x:Key="FgTitle" Color="#F5F6F8" />
+    <SolidColorBrush x:Key="FgMuted" Color="#C4C8D0" />
+    <SolidColorBrush x:Key="FgFaint" Color="#9499A3" />
+    <SolidColorBrush x:Key="FgLabel" Color="#C4C8D0" />
+
+    <SolidColorBrush x:Key="GlassBase" Color="#0B0C0E" />
+    <SolidColorBrush x:Key="GlassEdge" Color="#2A2D33" />
+    <SolidColorBrush x:Key="Sheen" Color="Transparent" />
+    <SolidColorBrush x:Key="LensFill" Color="#14161A" />
+    <SolidColorBrush x:Key="LensEdge" Color="#262930" />
+
+    <SolidColorBrush x:Key="ButtonFill" Color="#1B1E23" />
+    <SolidColorBrush x:Key="ButtonHover" Color="#2B2F36" />
+    <SolidColorBrush x:Key="SubNavFill" Color="#07080A" />
+    <SolidColorBrush x:Key="TrackFill" Color="#1F2228" />
+    <SolidColorBrush x:Key="TrackEdge" Color="#2C3038" />
+    <SolidColorBrush x:Key="TipFill" Color="#14161A" />
+    <SolidColorBrush x:Key="TipEdge" Color="#3A3E46" />
+    <!-- El submenú de un menú del clic derecho sale en su propia ventana emergente, con los colores de serie: se le dan los del menú -->
+    <StaticResource x:Key="MenuFlyoutPresenterBackground" ResourceKey="TipFill" />
+    <StaticResource x:Key="MenuFlyoutPresenterBorderBrush" ResourceKey="TipEdge" />
+
+    <SolidColorBrush x:Key="TaskLane" Color="#07080A" />
+    <SolidColorBrush x:Key="TaskCardFill" Color="#17191E" />
+    <SolidColorBrush x:Key="TaskCardEdge" Color="#272A31" />
+    <SolidColorBrush x:Key="TaskCardHoverEdge" Color="#4A4F59" />
+    <SolidColorBrush x:Key="TaskSection" Color="#1B1E23" />
+</ResourceDictionary>

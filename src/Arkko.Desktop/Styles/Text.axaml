@@ -1,0 +1,167 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- VENTANAS: tipo de letra, tamaño y color de la raíz, como en la de WPF -->
+    <Style Selector="Window">
+        <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    </Style>
+
+    <!-- TERMINAL: el texto en tres intensidades, como en una 5250; la negrita en FgStrong, y los títulos y las cifras
+         grandes (negrita de 15 o más) en FgTitle. Dentro de un botón o de un menú, la negrita sigue el color del
+         control, que puede ir sobre un fondo claro.
+         Un estilo que depende de una condición gana al color que pone una plantilla y al de un estilo de clase: la negrita
+         que ya tiene color propio se excluye, con la clase ownColor o por su clase de estilo. -->
+    <Style Selector=".terminal TextBlock[FontWeight=SemiBold]:not(.ownColor):not(.doneTitle):not(.columnHead):not(.since):not(.rank):not(.zoneTitle):not(.planLabel):not(.reviewText)">
+        <Setter Property="Foreground" Value="{DynamicResource FgStrong}" />
+    </Style>
+    <Style Selector=".terminal TextBlock[FontWeight=Bold]:not(.ownColor):not(.doneTitle):not(.columnHead):not(.since):not(.rank):not(.zoneTitle):not(.planLabel):not(.reviewText)">
+        <Setter Property="Foreground" Value="{DynamicResource FgStrong}" />
+    </Style>
+    <Style Selector=".terminal TextBlock[FontWeight=SemiBold][FontSize=15]:not(.ownColor), .terminal TextBlock[FontWeight=SemiBold][FontSize=16]:not(.ownColor), .terminal TextBlock[FontWeight=SemiBold][FontSize=17]:not(.ownColor), .terminal TextBlock[FontWeight=SemiBold][FontSize=18]:not(.ownColor), .terminal TextBlock[FontWeight=SemiBold][FontSize=20]:not(.ownColor), .terminal TextBlock.metric:not(.ownColor)">
+        <Setter Property="Foreground" Value="{DynamicResource FgTitle}" />
+    </Style>
+    <Style Selector=".terminal Button TextBlock[FontWeight=SemiBold]">
+        <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+    <Style Selector=".terminal Button TextBlock[FontWeight=Bold]">
+        <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+    <Style Selector=".terminal MenuItem TextBlock[FontWeight=SemiBold]">
+        <Setter Property="Foreground" Value="{Binding $parent[MenuItem].Foreground}" />
+    </Style>
+
+    <!-- ESCALA TIPOGRÁFICA: cuatro tamaños enteros. Metric, la cifra grande de una ficha; Body, el texto
+         corrido; Label, la etiqueta o el dato secundario; Caption, la nota al pie y la cabecera en mayúsculas. -->
+    <Style Selector="TextBlock.metric">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.body">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.label">
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+    <Style Selector="TextBlock.caption">
+        <Setter Property="FontSize" Value="10" />
+    </Style>
+
+    <!-- AJUSTE: nombre, explicación y el control a la derecha -->
+    <Style Selector="TextBlock.settingName">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.settingHint">
+        <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+    </Style>
+
+    <Style Selector="TextBlock.sectionTitle">
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="4,8,0,8" />
+    </Style>
+    <Style Selector="TextBlock.menuLabel">
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="2,0,0,8" />
+    </Style>
+    <!-- En terminal, las cabeceras de sección son títulos: en blanco y no apagadas -->
+    <Style Selector=".terminal TextBlock.sectionTitle, .terminal TextBlock.menuLabel">
+        <Setter Property="Foreground" Value="{DynamicResource FgTitle}" />
+    </Style>
+
+    <!-- ICONOS: glifos de la fuente de iconos -->
+    <Style Selector="TextBlock.icon">
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+    </Style>
+
+    <!-- LENTES: tarjetas de cristal sobre el líquido -->
+    <Style Selector="Border.lens">
+        <Setter Property="Background" Value="{DynamicResource LensFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource LensEdge}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <!-- SEPARADOR: una línea fina con el color de los carriles -->
+    <Style Selector="Border.rule">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource TrackEdge}" />
+    </Style>
+
+    <!-- TOOLTIP: tarjeta de cristal a juego con el tema -->
+    <Style Selector="ToolTip">
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        <Setter Property="Background" Value="{DynamicResource TipFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource TipEdge}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MaxWidth" Value="380" />
+    </Style>
+    <Style Selector="ToolTip TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- DESPLEGABLE DEL BUSCADOR: la tarjeta la pone el propio buscador -->
+    <Style Selector="FlyoutPresenter.picker">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MaxWidth" Value="520" />
+    </Style>
+
+    <!-- MENÚ DEL CLIC DERECHO: tarjeta como la de los tooltips -->
+    <Style Selector="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource TipFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource TipEdge}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+        <Setter Property="Padding" Value="4" />
+        <Setter Property="MinWidth" Value="240" />
+        <Setter Property="MaxWidth" Value="560" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem.caption">
+        <Setter Property="Theme" Value="{StaticResource MenuCaption}" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="12,8,12,2" />
+    </Style>
+    <!-- FILAS DE UNA LISTA de elegir (Seguridad, Tokens): como las de Sesiones, con fondo al pasar y al elegirla -->
+    <Style Selector="ListBox.rows ListBoxItem">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ListBox.rows ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+    </Style>
+    <Style Selector="ListBox.rows ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+    </Style>
+    <!-- «NO MOLESTAR» SIN SONIDO: los botones siguen a la vista, apagados -->
+    <Style Selector="StackPanel.quiet:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+    </Style>
+</Styles>

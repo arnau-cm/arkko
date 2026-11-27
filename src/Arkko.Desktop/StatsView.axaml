@@ -1,0 +1,344 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.StatsView"
+             x:DataType="local:PanelModel">
+    <!-- ESTADÍSTICAS: las cifras del periodo, el histórico, por proyecto o por tarea, la caché, los límites y los prompts más
+         caros. En el panel van bajo su barra, que lleva el periodo; clavadas en un corcho, con el periodo arriba -->
+    <UserControl.Resources>
+        <!-- Ficha de una barra o de un proyecto: título, filas con su color y total -->
+        <DataTemplate x:Key="BarTipTemplate" x:DataType="local:BarTip">
+            <StackPanel MinWidth="200">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:TipRow">
+                            <Grid Margin="0,1" ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Width="7" Height="7" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{DynamicResource FgMuted}" Margin="0,0,16,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding Total}" Foreground="{DynamicResource FgFaint}" Classes="caption" Margin="0,8,0,0" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Ficha de un prompt: cuándo y dónde, el texto completo y los tokens por modelo -->
+        <DataTemplate x:Key="PromptTipTemplate" x:DataType="local:PromptTip">
+            <StackPanel MaxWidth="360">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Where}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,1,0,8" />
+                <Border Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}" Padding="8,8" Margin="0,0,0,8">
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" MaxHeight="220" TextTrimming="CharacterEllipsis" />
+                </Border>
+                <ItemsControl ItemsSource="{Binding Models}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:TipRow">
+                            <Grid Margin="0,1" ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Width="7" Height="7" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{DynamicResource FgMuted}" Margin="0,0,16,0" />
+                                <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding Footer}" Foreground="{DynamicResource FgFaint}" Classes="caption" Margin="0,8,0,0" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- CIFRA CLAVE: icono en su círculo tintado y nombre; el valor con su mini gráfica; el cambio frente al tramo anterior -->
+        <DataTemplate x:Key="Kpi" x:DataType="local:Kpi">
+            <Border Classes="lens" Padding="14,12" Margin="0,0,8,0">
+                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                    <DockPanel Grid.ColumnSpan="2">
+                        <Grid Width="24" Height="24" Margin="0,0,8,0">
+                            <Ellipse Fill="{Binding Fill}" />
+                            <TextBlock Text="{Binding Glyph}" Classes="icon" FontSize="12" Foreground="{Binding Brush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <TextBlock Text="{Binding Label}" Foreground="{DynamicResource FgMuted}" Classes="label" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <TextBlock Grid.Row="1" Text="{Binding Value}" Classes="metric" Margin="0,8,8,0" VerticalAlignment="Bottom" />
+                    <local:Sparkline Grid.Row="1" Grid.Column="1" Width="72" Height="30" Margin="0,8,0,2" VerticalAlignment="Bottom"
+                                     Values="{Binding Trend}" Stroke="{Binding Brush}" />
+                    <!-- Sin comparación («Todo») se oculta sin soltar su sitio: así las tarjetas no cambian de alto con el periodo -->
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Margin="0,6,0,0" FontSize="11" TextTrimming="CharacterEllipsis"
+                               Opacity="{Binding DeltaOpacity}" ToolTip.Tip="{Binding DeltaTip}">
+                        <Run Text="{Binding Delta}" Foreground="{Binding DeltaBrush}" FontWeight="SemiBold" /><Run
+                             Text="  " /><Run Text="{Binding DeltaNote}" Foreground="{DynamicResource FgFaint}" />
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Columna de una barra del histórico o de la caché, con su ficha -->
+        <DataTemplate x:Key="BarColumn" x:DataType="local:BarModel">
+            <Grid Classes="barColumn" Background="Transparent" RowDefinitions="*,18">
+                <ToolTip.Tip>
+                    <ContentControl Content="{Binding Tip}" ContentTemplate="{StaticResource BarTipTemplate}" />
+                </ToolTip.Tip>
+                <Border Classes="hover" CornerRadius="{DynamicResource RadiusXS}" Background="Transparent" />
+                <local:StackedBar Bar="{Binding}" />
+                <TextBlock Grid.Row="1" Text="{Binding Label}" Foreground="{DynamicResource FgFaint}" FontSize="10"
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+            </Grid>
+        </DataTemplate>
+
+    </UserControl.Resources>
+    <Grid>
+        <!-- Las gráficas necesitan su alto: en una ventana baja se desplaza en lugar de pisarse -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <DockPanel MinHeight="640">
+            <!-- PIE: de dónde salen los datos -->
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Footer}" Foreground="{DynamicResource FgFaint}" Classes="caption" Margin="16,0,16,8" />
+            <Grid Margin="16,4,16,8" RowDefinitions="Auto,*,*,Auto" ColumnDefinitions="3*,2*">
+                <!-- CIFRAS CLAVE -->
+                <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding Kpis}" ItemTemplate="{StaticResource Kpi}" Margin="0,0,-8,12">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="1" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- HISTÓRICO -->
+                <DockPanel Grid.Row="1" Margin="0,0,8,8">
+                    <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="HISTÓRICO" Margin="2,0,0,8" />
+                    <Border Classes="lens" Padding="16,12" Margin="0">
+                        <DockPanel>
+                            <!-- Leyenda: un punto por modelo -->
+                            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Legend}" Margin="0,0,0,8">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:LegendItem">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+                                            <Ellipse Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgMuted}" FontSize="11" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Grid ColumnDefinitions="44,*" RowDefinitions="*,18">
+                                <!-- Eje: máximo arriba, mitad y cero, con líneas guía -->
+                                <Grid Grid.ColumnSpan="2" RowDefinitions="*,*">
+                                    <Border Grid.Row="0" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,0" Margin="44,0,0,0" />
+                                    <Border Grid.Row="1" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,1" Margin="44,0,0,0" />
+                                    <TextBlock Grid.Row="0" Text="{Binding AxisTop}" Foreground="{DynamicResource FgFaint}" FontSize="10" VerticalAlignment="Top" Margin="0,-8,0,0" />
+                                    <TextBlock Grid.Row="1" Text="{Binding AxisMid}" Foreground="{DynamicResource FgFaint}" FontSize="10" VerticalAlignment="Top" Margin="0,-8,0,0" />
+                                </Grid>
+                                <ItemsControl Grid.Column="1" Grid.RowSpan="2" ItemsSource="{Binding Bars}" ItemTemplate="{StaticResource BarColumn}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Grid.ColumnSpan="2" Classes="pending" Text="Sin prompts en este periodo" IsVisible="{Binding HistoryEmptyVisible}" />
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
+
+                <!-- POR PROYECTO O POR TAREA: el mismo reparto, por la carpeta o por la clave de tarea que lleva -->
+                <DockPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,8">
+                    <DockPanel DockPanel.Dock="Top" Margin="2,0,0,4">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,-4,-8,0">
+                            <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Breakdown" IsChecked="{Binding ByProject}" Content="Proyectos" />
+                            <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Breakdown" IsChecked="{Binding ByTask}" Content="Tareas" />
+                        </StackPanel>
+                        <TextBlock Classes="menuLabel" Text="{Binding BreakdownTitle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <Border Classes="lens" Padding="16,12" Margin="0">
+                        <Grid>
+                            <DockPanel>
+                                <!-- Reparto del periodo entre los proyectos, cada uno en su color -->
+                                <local:ShareBar DockPanel.Dock="Top" Height="8" Margin="0,2,0,12" Slices="{Binding ProjectShares}" />
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Projects}">
+                                        <ItemsControl.ItemTemplate>
+                                            <!-- Un repositorio con worktrees lleva flecha y, abierto, sus carpetas debajo, sangradas y en gris;
+                                                 una tarea se abre en el Tablero con el clic derecho -->
+                                            <DataTemplate x:DataType="local:ProjectRow">
+                                                <Grid Classes="projectRow" Classes.worktree="{Binding IsWorktree}" Margin="{Binding Indent}" Background="Transparent"
+                                                      Cursor="{Binding RowCursor}" PointerReleased="ProjectRow_PointerReleased">
+                                                    <ToolTip.Tip>
+                                                        <ContentControl Content="{Binding Tip}" ContentTemplate="{StaticResource BarTipTemplate}" />
+                                                    </ToolTip.Tip>
+                                                    <Grid.ContextMenu>
+                                                        <ContextMenu IsVisible="{Binding IsTask}">
+                                                            <MenuItem Classes="caption" Header="{Binding Name}" />
+                                                            <MenuItem Header="Ver tarea" Click="ViewTask_Click">
+                                                                <MenuItem.Icon>
+                                                                    <TextBlock Classes="icon" Text="&#xE762;" FontSize="14" Foreground="{DynamicResource Accent}" />
+                                                                </MenuItem.Icon>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </Grid.ContextMenu>
+                                                    <!-- Fondo: el color del proyecto, tenue, a escala del que más gasta -->
+                                                    <local:FractionFill Fraction="{Binding Fraction}" Fill="{Binding Fill}" Radius="8" />
+                                                    <Border Classes="hover" CornerRadius="{DynamicResource RadiusS}" Background="Transparent" />
+                                                    <DockPanel Margin="10,6">
+                                                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0">
+                                                            <TextBlock Classes="tokens" Text="{Binding Tokens}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                                                            <TextBlock Text="{Binding Pct}" Foreground="{DynamicResource FgFaint}" FontSize="11" HorizontalAlignment="Right" />
+                                                        </StackPanel>
+                                                        <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <DockPanel>
+                                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Chevron}" Classes="icon" FontSize="9"
+                                                                           Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,1,6,0"
+                                                                           IsVisible="{Binding Expandable}" />
+                                                                <TextBlock Classes="name" Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                            </DockPanel>
+                                                            <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,1,0,0"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                            <TextBlock Classes="pending" Text="{Binding ProjectsEmptyText}" IsVisible="{Binding ProjectsEmptyVisible}" />
+                        </Grid>
+                    </Border>
+                </DockPanel>
+
+                <!-- EVOLUCIÓN DE LOS LÍMITES -->
+                <DockPanel Grid.Row="2" Margin="0,0,8,8">
+                    <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="EVOLUCIÓN DE LOS LÍMITES" Margin="2,0,0,8" />
+                    <Border Classes="lens" Padding="16,12" Margin="0">
+                        <DockPanel>
+                            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding LimitLegend}" Margin="0,0,0,8">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:LegendItem">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+                                            <Ellipse Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgMuted}" FontSize="11" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Grid>
+                                <local:StepChart Series="{Binding LimitSeries}" From="{Binding LimitsFrom}" To="{Binding LimitsTo}"
+                                                 GridBrush="{DynamicResource TrackEdge}" LabelBrush="{DynamicResource FgFaint}" />
+                                <TextBlock Classes="pending" IsVisible="{Binding LimitsEmptyVisible}" Text="Sin datos de los límites en este periodo" />
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
+
+                <!-- CACHÉ -->
+                <DockPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="CACHÉ" Margin="2,0,0,8" />
+                    <Border Classes="lens" Padding="16,12" Margin="0">
+                        <Grid ColumnDefinitions="40,*" RowDefinitions="*,18">
+                            <Grid Grid.ColumnSpan="2" RowDefinitions="*,*">
+                                <Border Grid.Row="0" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,0" Margin="40,0,0,0" />
+                                <Border Grid.Row="1" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,1" Margin="40,0,0,0" />
+                                <TextBlock Grid.Row="0" Text="100 %" Foreground="{DynamicResource FgFaint}" FontSize="10" VerticalAlignment="Top" Margin="0,-8,0,0" />
+                                <TextBlock Grid.Row="1" Text="50 %" Foreground="{DynamicResource FgFaint}" FontSize="10" VerticalAlignment="Top" Margin="0,-8,0,0" />
+                            </Grid>
+                            <ItemsControl Grid.Column="1" Grid.RowSpan="2" ItemsSource="{Binding CacheBars}" ItemTemplate="{StaticResource BarColumn}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <TextBlock Grid.ColumnSpan="2" Classes="pending" Text="Sin prompts en este periodo" IsVisible="{Binding CacheEmptyVisible}" />
+                        </Grid>
+                    </Border>
+                </DockPanel>
+
+                <!-- PROMPTS MÁS CAROS -->
+                <DockPanel Grid.Row="3" Grid.ColumnSpan="2" Height="260">
+                    <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="PROMPTS MÁS CAROS" Margin="2,0,0,8" />
+                    <Border Classes="lens" Padding="16,8" Margin="0">
+                        <Grid>
+                            <DockPanel>
+                                <!-- Mismas columnas en la cabecera y en las filas -->
+                                <Grid DockPanel.Dock="Top" Margin="8,4,16,6" ColumnDefinitions="32,92,210,*,120,72,88,96">
+                                    <TextBlock Classes="columnHead" Text="#" />
+                                    <TextBlock Grid.Column="1" Classes="columnHead" Text="CUÁNDO" />
+                                    <TextBlock Grid.Column="2" Classes="columnHead" Text="PROYECTO" />
+                                    <TextBlock Grid.Column="3" Classes="columnHead" Text="PROMPT" />
+                                    <TextBlock Grid.Column="4" Classes="columnHead" Text="TOKENS NUEVOS" HorizontalAlignment="Right" />
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Text="&#xE895;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBlock Classes="columnHead" Text="CACHÉ" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Text="&#xE916;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBlock Classes="columnHead" Text="DURACIÓN" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <TextBlock Text="&#xE943;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBlock Classes="columnHead" Text="LLAMADAS" />
+                                    </StackPanel>
+                                </Grid>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Costliest}" Margin="0,0,8,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:CostlyRow">
+                                                <Border Classes="costlyRow" Classes.top="{Binding IsTop}" Classes.noText="{Binding !HasText}"
+                                                        CornerRadius="{DynamicResource RadiusS}" Padding="8,6" Background="Transparent"
+                                                        BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,0,0,1" Cursor="{Binding RowCursor}"
+                                                        PointerReleased="CostlyRow_PointerReleased">
+                                                    <ToolTip.Tip>
+                                                        <ContentControl Content="{Binding Tip}" ContentTemplate="{StaticResource PromptTipTemplate}" />
+                                                    </ToolTip.Tip>
+                                                    <Grid ColumnDefinitions="32,92,210,*,120,72,88,96">
+                                                        <!-- Los tres más caros, en el color de acento -->
+                                                        <TextBlock Classes="rank" Text="{Binding RankText}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding When}" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                                        <!-- Proyecto en una etiqueta de su color y, detrás, el worktree en gris -->
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                            <Border CornerRadius="9" Padding="8,1,8,2" Background="{Binding ProjectFill}" MaxWidth="130">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="6" Height="6" Fill="{Binding ProjectBrush}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                                                    <TextBlock Text="{Binding Project}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding Worktree}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center"
+                                                                       Margin="6,0,0,0" TextTrimming="CharacterEllipsis" MaxWidth="70" IsVisible="{Binding WorktreeVisible}" />
+                                                        </StackPanel>
+                                                        <TextBlock Classes="preview" Grid.Column="3" Text="{Binding Preview}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0"
+                                                                   VerticalAlignment="Center" />
+                                                        <!-- Barra de calor: a escala del prompt más caro, detrás de la cifra -->
+                                                        <Grid Grid.Column="4" Margin="8,0,0,0">
+                                                            <local:FractionFill Fraction="{Binding HeatFraction}" Fill="{Binding ProjectFill}" Radius="4" FromRight="True" />
+                                                            <TextBlock Text="{Binding Tokens}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,2,6,2" />
+                                                        </Grid>
+                                                        <TextBlock Grid.Column="5" Text="{Binding Cache}" Foreground="{DynamicResource FgFaint}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="6" Text="{Binding Duration}" Foreground="{DynamicResource FgMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="7" Text="{Binding Calls}" Foreground="{DynamicResource FgMuted}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                            <TextBlock Classes="pending" Text="Sin prompts en este periodo" IsVisible="{Binding CostliestEmptyVisible}" />
+                        </Grid>
+                    </Border>
+                </DockPanel>
+            </Grid>
+        </DockPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

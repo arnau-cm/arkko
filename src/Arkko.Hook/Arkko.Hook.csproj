@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>ak</AssemblyName>
+    <RootNamespace>Arkko.Hook</RootNamespace>
+    <TieredPGO>true</TieredPGO>
+    <TieredCompilationQuickStartupJit>true</TieredCompilationQuickStartupJit>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <!-- BuildTag cambia solo esta DLL: permite pedir otra evaluación a Smart App Control sin recompilar Core. -->
+    <InformationalVersion Condition="'$(BuildTag)' != ''">$(Version)+$(BuildTag)</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(BuildTag)' != ''">
+    <AssemblyMetadata Include="BuildTag" Value="$(BuildTag)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arkko.Core\Arkko.Core.csproj" />
+  </ItemGroup>
+
+</Project>

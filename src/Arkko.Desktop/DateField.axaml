@@ -1,0 +1,78 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Arkko.Desktop.DateField">
+    <UserControl.Resources>
+        <!-- DÍA DEL CALENDARIO: al pasar, relleno del rojo de la app; el borde lo pone cada día (el elegido) -->
+        <ControlTheme x:Key="DayButton" TargetType="Button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" CornerRadius="{DynamicResource RadiusS}" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+            </Style>
+        </ControlTheme>
+
+        <!-- EL CAMPO: la fecha elegida, o el texto de sin fecha, y el icono del calendario -->
+        <ControlTheme x:Key="FieldButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" Background="{DynamicResource TrackFill}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1"
+                            CornerRadius="{DynamicResource RadiusS}" Padding="6,3">
+                        <ContentPresenter Content="{TemplateBinding Content}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="BorderBrush" Value="{DynamicResource FgFaint}" />
+            </Style>
+        </ControlTheme>
+    </UserControl.Resources>
+
+    <Grid>
+        <Button Name="Field" Theme="{StaticResource FieldButton}" Click="Field_Click" HorizontalAlignment="Left" MinWidth="150" Margin="0,0,0,8"
+                ToolTip.Tip="Elige la fecha en el calendario">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="&#xE787;" Classes="icon" FontSize="11" Foreground="{DynamicResource FgMuted}"
+                           VerticalAlignment="Center" Margin="12,0,0,0" />
+                <TextBlock Name="Shown" VerticalAlignment="Center" />
+            </DockPanel>
+        </Button>
+
+        <!-- EL CALENDARIO: un mes, de lunes a domingo, con «Hoy» y, si se puede, «Sin fecha» -->
+        <Popup Name="Pop" PlacementTarget="{Binding #Field}" Placement="BottomEdgeAlignedLeft" IsLightDismissEnabled="True">
+            <Border Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}" BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusM}" Padding="10" Margin="0,2,10,10" BoxShadow="0 3 14 0 #47000000">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Left" Theme="{StaticResource DayButton}" Click="Previous_Click" ToolTip.Tip="Mes anterior">
+                            <TextBlock Text="&#xE76B;" Classes="icon" FontSize="10" />
+                        </Button>
+                        <Button DockPanel.Dock="Right" Theme="{StaticResource DayButton}" Click="Next_Click" ToolTip.Tip="Mes siguiente">
+                            <TextBlock Text="&#xE76C;" Classes="icon" FontSize="10" />
+                        </Button>
+                        <TextBlock Name="Month" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <UniformGrid Name="WeekDays" Columns="7" Margin="0,0,0,2" />
+                    <UniformGrid Name="Days" Columns="7" Rows="6" />
+                    <DockPanel Margin="0,8,0,0">
+                        <Button Theme="{StaticResource ChipButton}" Click="Today_Click" Content="Hoy" />
+                        <Button Name="ClearButton" Theme="{StaticResource ChipButton}" Click="Clear_Click" HorizontalAlignment="Right" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

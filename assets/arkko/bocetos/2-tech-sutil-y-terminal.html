@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bocetos AK sutil</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@600&family=Geist+Mono:wght@500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f4f5; --fg:#1d1d21; --muted:#6b6b74; --card:#fff; --line:#e3e3e7; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 Inter, system-ui, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:20px; margin:36px 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 8px; }
+  .switch { display:inline-flex; flex-wrap:wrap; gap:4px; background:#e4e4e7; border-radius:18px; padding:3px; margin:8px 0 0; }
+  .switch button { border:0; background:transparent; font:600 13px Inter, sans-serif; padding:5px 14px; border-radius:99px; cursor:pointer; color:#444; display:inline-flex; align-items:center; gap:6px; }
+  .switch button.on { background:#fff; color:#111; box-shadow:0 1px 2px rgba(0,0,0,.12); }
+  .switch i { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:14px; margin-top:12px; }
+  .concept { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .concept header { padding:12px 16px; border-bottom:1px solid var(--line); }
+  .concept header b { font-size:15px; }
+  .concept header span { color:var(--muted); font-size:13px; }
+  .tag { display:inline-block; font-size:11px; font-weight:600; padding:1px 8px; border-radius:99px; margin-left:6px; vertical-align:1px; background:#e3e8ff; color:#2b3a8f; }
+  .row { display:flex; align-items:flex-end; gap:16px; padding:16px; }
+  .row.dark { background:#161618; color:#888; }
+  .row.light { background:#f6f6f6; color:#666; }
+  .cell { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; }
+  svg { display:block; }
+  .marks { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin-top:12px; }
+  .mark { border-radius:12px; padding:18px 20px; display:flex; align-items:center; gap:12px; }
+  .mark.dark { background:#0B0B0C; color:#D9D6CF; }
+  .mark.light { background:#E4E1DA; color:#0B0B0C; }
+  .mark .w { font-size:26px; line-height:1; }
+  .mark .geist { font-family:Geist, sans-serif; font-weight:600; letter-spacing:-.03em; }
+  .mark .mono { font-family:'Geist Mono', monospace; font-weight:500; letter-spacing:-.02em; }
+  .mark small { display:block; font:12px Inter, sans-serif; opacity:.55; margin-top:4px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- Hormigón suave: solo un grano muy fino, sin manchas -->
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="3" result="fine"/>
+      <feColorMatrix in="fine" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.6 1.2" result="raw"/>
+      <feColorMatrix in="raw" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .14 0" result="pores"/>
+      <feComposite in="pores" in2="SourceGraphic" operator="in" result="pores-in"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pores-in"/></feMerge>
+    </filter>
+    <clipPath id="clip-tile"><rect x="6" y="6" width="116" height="116" rx="28"/></clipPath>
+  </defs>
+</svg>
+<main>
+  <h1>La AK, tech pero sutil</h1>
+  <p class="lead">El hormigón, ahora solo un grano fino, sin manchas. Los detalles de software, reducidos a un gesto que se ve en grande y desaparece en pequeño. Y tres versiones de terminal.</p>
+  <div class="switch" id="accent"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <h2>Con el nombre</h2>
+  <div class="marks" id="marks"></div>
+</main>
+
+<script>
+const themes = {
+  dark:  { tile: '#0B0B0C', ink: '#BDB9B1', line: '#3A3936', faint: '#55524D', dark: true },
+  light: { tile: '#B3AFA7', ink: '#0B0B0C', line: '#8E8A82', faint: '#6E6A63', dark: false }
+};
+const MONO = `font-family="'Geist Mono', Consolas, monospace"`;
+
+function stroke(x1, y1, x2, y2, ws, wm, we, bend = 0) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const side = s => {
+    const A = [x1 + nx * ws / 2 * s, y1 + ny * ws / 2 * s];
+    const M = [mx + nx * wm / 2 * s, my + ny * wm / 2 * s];
+    const B = [x2 + nx * we / 2 * s, y2 + ny * we / 2 * s];
+    return { A, B, C: [2 * M[0] - (A[0] + B[0]) / 2, 2 * M[1] - (A[1] + B[1]) / 2] };
+  };
+  const a = side(1), b = side(-1), f = n => n.toFixed(1);
+  return `M${f(a.A[0])} ${f(a.A[1])} Q${f(a.C[0])} ${f(a.C[1])} ${f(a.B[0])} ${f(a.B[1])} L${f(b.B[0])} ${f(b.B[1])} Q${f(b.C[0])} ${f(b.C[1])} ${f(b.A[0])} ${f(b.A[1])} Z`;
+}
+
+// La Cuchilla, desplazable y escalable
+const knife = (ink, ac, tf = '') => `<g ${tf ? `transform="${tf}"` : ''}>
+  <path d="${stroke(60, 30, 28, 98, 14, 10, 1)}" fill="${ink}"/>
+  <path d="${stroke(60, 30, 60, 98, 14, 11, 2)}" fill="${ink}"/>
+  <path d="${stroke(62, 68, 98, 98, 12, 8, 1)}" fill="${ink}"/>
+  <path d="${stroke(62, 68, 98, 32, 12, 8, 1)}" fill="${ac}"/></g>`;
+
+const tile = t => `<rect x="6" y="6" width="116" height="116" rx="28" fill="${t.tile}" filter="url(#grain)"/>`;
+
+const designs = {
+  liso: { name: 'Liso', note: 'La referencia: la Cuchilla sobre el hormigón suave, sin nada más.',
+    draw: (t, ac) => tile(t) + knife(t.ink, ac) },
+  circuito: { name: 'Circuito', note: 'Solo una pista: del brazo sale una línea fina que dobla y acaba en una vía. Lo demás, igual.',
+    draw: (t, ac) => tile(t) + knife(t.ink, ac) + `
+      <path d="M98 32 L106 24 H114" fill="none" stroke="${ac}" stroke-width="1.6" stroke-linejoin="round" opacity=".85"/>
+      <circle cx="114" cy="24" r="2.6" fill="${t.tile}" stroke="${ac}" stroke-width="1.6"/>` },
+  commit: { name: 'Commit', note: 'Un único nodo de git, hueco, donde el brazo sale del trazo vertical: ahí nace la rama.',
+    draw: (t, ac) => tile(t) + knife(t.ink, ac) + `<circle cx="60" cy="68" r="5" fill="${t.tile}" stroke="${t.ink}" stroke-width="2.6"/>` },
+  hex: { name: 'Hex', note: '«41 72 6B 6B 6F» (Arkko en ASCII) en una sola línea, abajo, casi del color del fondo. Se descubre al mirar de cerca.',
+    draw: (t, ac) => tile(t) + knife(t.ink, ac, 'translate(0 -6)') +
+      `<text x="64" y="112" ${MONO} font-size="8" letter-spacing="1.2" fill="${t.faint}" text-anchor="middle">41 72 6B 6B 6F</text>` },
+  terminal: { name: 'Terminal', isTerm: true,
+    note: 'La AK como la última línea de una terminal: un «$» tenue delante y el cursor parpadeando debajo, en el acento.',
+    draw: (t, ac) => tile(t) + `
+      <text x="22" y="40" ${MONO} font-size="16" font-weight="600" fill="${t.faint}">$</text>
+      ${knife(t.ink, t.ink, 'translate(66 60) scale(.78) translate(-63 -64)')}
+      <rect x="44" y="98" width="44" height="7" rx="1" fill="${ac}"><animate attributeName="opacity" values="1;1;0;0" dur="1.1s" repeatCount="indefinite"/></rect>` },
+  ventana: { name: 'Ventana', isTerm: true,
+    note: 'Una ventana de terminal mínima: los tres puntos arriba, muy tenues, y la AK con el cursor de bloque al lado.',
+    draw: (t, ac) => tile(t) + `
+      <g fill="${t.line}"><circle cx="24" cy="22" r="3.2"/><circle cx="35" cy="22" r="3.2"/><circle cx="46" cy="22" r="3.2"/></g>
+      <path d="M6 33 H122" stroke="${t.line}" stroke-width="1" clip-path="url(#clip-tile)"/>
+      ${knife(t.ink, t.ink, 'translate(56 74) scale(.74) translate(-63 -64)')}
+      <rect x="88" y="78" width="12" height="20" fill="${ac}"><animate attributeName="opacity" values="1;1;0;0" dur="1.1s" repeatCount="indefinite"/></rect>` },
+  prompt: { name: 'Prompt ›', isTerm: true,
+    note: 'El símbolo del prompt, «›», en el acento, y la AK a continuación: lo que escribes y lo que se construye.',
+    draw: (t, ac) => tile(t) + `
+      <path d="M20 50 L34 64 L20 78" fill="none" stroke="${ac}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+      ${knife(t.ink, t.ink, 'translate(74 64) scale(.74) translate(-63 -64)')}` }
+};
+
+const accents = [
+  { id: 'ambar', name: 'Ámbar', c: '#F5A623' },
+  { id: 'naranja', name: 'Naranja', c: '#F78166' },
+  { id: 'verde', name: 'Verde', c: '#3FB950' },
+  { id: 'azul', name: 'Azul', c: '#58A6FF' }
+];
+let accent = accents[0];
+
+const icon = (d, th, s) => `<svg width="${s}" height="${s}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">${d.draw(themes[th], accent.c)}</svg>`;
+
+function render() {
+  const sizes = [16, 20, 32, 64, 128];
+  const row = (d, th) => `<div class="row ${th}">${sizes.map(s => `<div class="cell">${icon(d, th, s)}<span>${s}</span></div>`).join('')}</div>`;
+  document.getElementById('grid').innerHTML = Object.values(designs).map(d =>
+    `<section class="concept"><header><b>${d.name}</b>${d.isTerm ? '<span class="tag">terminal</span>' : ''}<br><span>${d.note}</span></header>${row(d, 'dark')}${row(d, 'light')}</section>`).join('');
+  const marks = [['liso', 'dark', 'geist'], ['circuito', 'dark', 'geist'], ['terminal', 'dark', 'mono'],
+                 ['ventana', 'dark', 'mono'], ['prompt', 'light', 'mono'], ['commit', 'light', 'geist']];
+  document.getElementById('marks').innerHTML = marks.map(([k, th, f]) =>
+    `<div class="mark ${th}">${icon(designs[k], th, 44)}<div><div class="w ${f}">${f === 'mono' ? 'arkko' : 'Arkko'}</div><small>${designs[k].name}</small></div></div>`).join('');
+}
+
+document.getElementById('accent').innerHTML = accents.map(a =>
+  `<button data-v="${a.id}" class="${a === accent ? 'on' : ''}"><i style="background:${a.c}"></i>${a.name}</button>`).join('');
+document.getElementById('accent').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  accent = accents.find(a => a.id === b.dataset.v);
+  document.querySelectorAll('#accent button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+document.fonts.ready.then(render);
+render();
+</script>
+</body>
+</html>

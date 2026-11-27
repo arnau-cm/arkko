@@ -1,0 +1,115 @@
+/* RELOJES: TODAS LAS SESIONES A LA VEZ */
+
+/* Los colores de lo que se hace son los del Diagrama; los de los estados, los del tema que manda la app */
+:root {
+    --page: #16181f; --fg: #f2f3f7; --fg-muted: #b3b6c4; --fg-faint: #8a8d9c; --lens: rgba(255, 255, 255, 0.05); --lens-edge: rgba(255, 255, 255, 0.12);
+    --st-idle: #8a8d9c; --st-working: #56b6c2; --st-waiting: #e5c07b; --st-done: #98c379; --danger: #e03e4c; --c-user: #3fb950;
+    --ui-font: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    --dg-read: #58a6ff; --dg-search: #39c5cf; --dg-edit: #f778ba; --dg-run: #a6d96a; --dg-other: #9aa4b8; --dg-think: #f5c451; --dg-say: #c9d1e0;
+    --ck-grid: color-mix(in srgb, var(--fg-faint) 9%, transparent);
+}
+:root[data-theme="light"] {
+    --dg-read: #0969da; --dg-search: #1b7c83; --dg-edit: #bf3989; --dg-run: #4d8a14; --dg-other: #5b6478; --dg-think: #a86f00; --dg-say: #5b6478;
+}
+
+html, body { height: 100%; margin: 0; }
+body { background: var(--page); color: var(--fg); font-family: var(--ui-font); font-size: 13px; overflow: hidden; }
+
+/* LA PÁGINA: el papel con la retícula de los planos */
+.ck-page {
+    box-sizing: border-box;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px clamp(16px, 2.5vw, 28px) 20px;
+    background-image: linear-gradient(var(--ck-grid) 1px, transparent 1px), linear-gradient(90deg, var(--ck-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.ck-head { margin: 0; color: var(--fg-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ck-empty { margin: 40px auto; color: var(--fg-muted); text-align: center; max-width: 46ch; }
+
+/* LA CUADRÍCULA: un plano por repositorio; columnas y tamaño del reloj los pone el script para que quepan todos */
+.ck-grid {
+    --cols: 2;
+    --clock: 160px;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    grid-auto-rows: min-content;
+    gap: 14px;
+    min-height: 0;
+    overflow: auto;
+    align-content: start;
+}
+
+/* UN PLANO: la franja del color del repositorio con su nombre y, dentro, sus láminas */
+.ck-plan {
+    --repo: var(--fg-faint);
+    --band: var(--fg-faint);
+    --ink: color-mix(in srgb, var(--fg-faint) 62%, transparent);
+    display: grid;
+    align-content: start;
+    min-width: 0;
+    border: 1px solid var(--ink);
+}
+.ck-plan-head { display: flex; align-items: baseline; gap: 10px; padding: 6px 12px; background: var(--band); color: #fff; font-weight: 700; font-size: 14px; }
+.ck-plan-head small { margin-left: auto; font-weight: 400; font-size: 12px; opacity: 0.85; }
+.ck-sheets { display: grid; grid-template-columns: repeat(var(--span), minmax(0, 1fr)); gap: 10px; padding: 10px; }
+
+/* UNA LÁMINA: el reloj y su cajetín, con un borde fino de tinta y marcas de esquina. El borde dice lo que pide */
+.ck-sheet {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--clock) minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    min-width: 0;
+    padding: 14px 14px 14px 12px;
+    border: 1px solid var(--ink);
+    background: color-mix(in srgb, var(--ck-base) 70%, transparent);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.ck-sheet::before, .ck-sheet::after { content: ""; position: absolute; width: 10px; height: 10px; border: 0 solid var(--fg); opacity: 0.55; }
+.ck-sheet::before { left: -4px; top: -4px; border-width: 1.5px 0 0 1.5px; }
+.ck-sheet::after { right: -4px; bottom: -4px; border-width: 0 1.5px 1.5px 0; }
+.ck-sheet:hover { background: color-mix(in srgb, var(--fg) 6%, var(--ck-base)); }
+.ck-sheet:focus { outline: none; }
+.ck-sheet.working { border-color: color-mix(in srgb, var(--st-working) 70%, transparent); }
+.ck-sheet.asking { border-color: color-mix(in srgb, var(--st-waiting) 85%, transparent); background: color-mix(in srgb, var(--st-waiting) 7%, var(--ck-base)); }
+.ck-sheet.agents { border-style: dashed; border-color: color-mix(in srgb, var(--ck-agent) 80%, transparent); }
+.ck-sheet.review { border-color: color-mix(in srgb, var(--danger) 75%, transparent); }
+.ck-sheet.idle .ck-clock, .ck-sheet.done .ck-clock { opacity: 0.6; }
+.ck-clock { width: var(--clock); height: var(--clock); display: block; }
+
+/* EL CAJETÍN: cabecera con la carpeta y la tarea sobre el tinte del repositorio, filas de rótulo y valor, y un pie de tres casillas */
+.ck-box { display: grid; min-width: 0; border: 1px solid var(--ink); }
+.ck-box-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 5px 10px; background: color-mix(in srgb, var(--repo) 20%, transparent); }
+.ck-box-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+.ck-key { margin-left: auto; flex: none; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--repo) 70%, transparent); color: var(--fg); font-family: "Cascadia Mono", Consolas, monospace; font-size: 11px; font-weight: 600; }
+.ck-row { display: grid; grid-template-columns: 70px minmax(0, 1fr); min-width: 0; border-top: 1px solid var(--ink); }
+.ck-row > span { padding: 4px 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.ck-row > .ck-label { padding-left: 8px; border-right: 1px solid var(--ink); color: var(--fg-faint); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; line-height: 1.9; }
+.ck-state { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ck-sheet.working .ck-state { color: var(--st-working); }
+.ck-sheet.asking .ck-state { color: var(--st-waiting); }
+.ck-sheet.agents .ck-state { color: var(--ck-agent); }
+.ck-sheet.review .ck-state { color: var(--danger); }
+.ck-sheet.done .ck-state { color: var(--st-done); }
+.ck-sheet.idle .ck-state { color: var(--fg-faint); }
+.ck-foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.ck-foot span { min-width: 0; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-muted); font-size: 11.5px; }
+.ck-foot span + span { border-left: 1px solid var(--ink); }
+.ck-foot b { display: block; color: var(--fg-faint); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; }
+
+/* EL TAMAÑO ESTRECHO (un widget del corcho): sin cajetín, el reloj con su carpeta y su estado debajo; la página, más prieta */
+.ck-caption { display: grid; gap: 1px; justify-items: center; min-width: 0; max-width: 100%; }
+.ck-caption b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.ck-caption .ck-state { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }
+body[data-size="s"] .ck-page { gap: 8px; padding: 8px 10px 10px; }
+body[data-size="s"] .ck-head { display: none; }
+body[data-size="s"] .ck-plan-head { padding: 4px 9px; font-size: 12.5px; }
+body[data-size="s"] .ck-sheets { gap: 8px; padding: 8px; }
+body[data-size="s"] .ck-sheet { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 6px; padding: 10px 8px; text-align: center; }

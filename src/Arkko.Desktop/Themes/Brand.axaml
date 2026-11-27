@@ -1,0 +1,39 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- TEMA GRANATE: el color de la app de fondo, oscuro para que el texto se lea; lo que no cambia aquí lo pone el oscuro -->
+    <SolidColorBrush x:Key="Fg" Color="#FBEFF1" />
+    <SolidColorBrush x:Key="FgStrong" Color="#FBEFF1" />
+    <SolidColorBrush x:Key="FgTitle" Color="#FBEFF1" />
+    <SolidColorBrush x:Key="FgMuted" Color="#EBCCD2" />
+    <SolidColorBrush x:Key="FgFaint" Color="#CFA3AC" />
+    <SolidColorBrush x:Key="FgLabel" Color="#EBCCD2" />
+    <SolidColorBrush x:Key="Accent" Color="#FFB199" />
+
+    <LinearGradientBrush x:Key="GlassBase" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#FC4A1520" Offset="0" />
+        <GradientStop Color="#FC34101A" Offset="0.55" />
+        <GradientStop Color="#FD240B12" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassEdge" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#99FF9DAA" Offset="0" />
+        <GradientStop Color="#26FF9DAA" Offset="0.4" />
+        <GradientStop Color="#40FF9DAA" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="SubNavFill" Color="#40120006" />
+    <SolidColorBrush x:Key="ChipOn" Color="#99C2323C" />
+    <SolidColorBrush x:Key="ChipOnEdge" Color="#FF8A95" />
+    <SolidColorBrush x:Key="SwitchOn" Color="#E0525F" />
+    <SolidColorBrush x:Key="PrimaryFill" Color="#FBEFF1" />
+    <SolidColorBrush x:Key="PrimaryText" Color="#34101A" />
+    <SolidColorBrush x:Key="TipFill" Color="#F03A121C" />
+    <SolidColorBrush x:Key="TipEdge" Color="#66FF9DAA" />
+    <!-- El submenú de un menú del clic derecho sale en su propia ventana emergente, con los colores de serie: se le dan los del menú -->
+    <StaticResource x:Key="MenuFlyoutPresenterBackground" ResourceKey="TipFill" />
+    <StaticResource x:Key="MenuFlyoutPresenterBorderBrush" ResourceKey="TipEdge" />
+
+    <SolidColorBrush x:Key="TaskLane" Color="#40120006" />
+    <SolidColorBrush x:Key="TaskCardFill" Color="#FF4A1A25" />
+    <SolidColorBrush x:Key="TaskCardEdge" Color="#33FF9DAA" />
+    <SolidColorBrush x:Key="TaskCardHoverEdge" Color="#66FF9DAA" />
+</ResourceDictionary>

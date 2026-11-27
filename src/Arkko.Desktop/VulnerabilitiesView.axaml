@@ -1,0 +1,409 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.VulnerabilitiesView"
+             x:DataType="local:VulnerabilitiesModel">
+    <UserControl.Resources>
+        <!-- UNA LÍNEA DEL HISTORIAL: un punto en la línea de tiempo, el estado y, debajo, cuándo y la frase de ese momento -->
+        <DataTemplate x:Key="HistoryRow" x:DataType="local:VulnHistoryRow">
+            <Grid ColumnDefinitions="20,*">
+                <!-- La línea baja hasta el punto siguiente; el último no la lleva -->
+                <Border Width="2" Background="{DynamicResource TrackEdge}" HorizontalAlignment="Center" Margin="0,12,0,0"
+                        IsVisible="{Binding !IsLast}" CornerRadius="1" />
+                <Ellipse Width="10" Height="10" Fill="{Binding Brush}" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                <StackPanel Grid.Column="1" Margin="6,0,0,14">
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Sub}" Foreground="{DynamicResource FgFaint}" Classes="label" TextWrapping="Wrap" Margin="0,2,0,0" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- UN PASO DEL PROTOCOLO ANTE UN AVISO: número, qué se hace y por qué -->
+        <DataTemplate x:Key="StepCard" x:DataType="local:NoticeStep">
+            <Border BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" CornerRadius="{DynamicResource RadiusS}" Padding="10,8" Margin="0,0,8,0">
+                <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Border Width="18" Height="18" CornerRadius="9" Background="{DynamicResource TrackFill}">
+                            <TextBlock Text="{Binding Number}" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Text}" Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- Las dos pestañas grandes: el resumen de cada parte es también la forma de elegirla -->
+        <Style Selector="RadioButton.bigTab">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <!-- Línea entre filas de la tabla, más suave que el borde de la tarjeta -->
+        <Style Selector="Border.rowLine">
+            <Setter Property="BorderBrush" Value="{DynamicResource TrackEdge}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+        </Style>
+        <Style Selector="Button.row:pointerover > Grid">
+            <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+        </Style>
+        <Style Selector="TextBlock.columnHead">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="0.6" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <!-- LAS DOS PARTES: lo que tienes instalado y los avisos de seguridad -->
+        <Grid ColumnDefinitions="*,12,*">
+            <RadioButton Theme="{StaticResource ChoiceTile}" Classes="bigTab" GroupName="VulnTab" IsChecked="{Binding ShowMachine}">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="6,4">
+                    <Grid Width="42" Height="42" VerticalAlignment="Center" Margin="0,0,14,0">
+                        <Border CornerRadius="11" Background="{DynamicResource Accent}" Opacity="0.15" />
+                        <TextBlock Text="&#xE7F8;" Classes="icon" FontSize="19" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Tu equipo y tus repos" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="Lo que tienes instalado con fallos de seguridad conocidos" Foreground="{DynamicResource FgFaint}" Classes="label"
+                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0">
+                        <TextBlock Text="{Binding MachineCount}" Foreground="{Binding MachineCountBrush}" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding MachineCountLabel}" Foreground="{DynamicResource FgFaint}" FontSize="11" HorizontalAlignment="Right" />
+                    </StackPanel>
+                </Grid>
+            </RadioButton>
+            <RadioButton Grid.Column="2" Theme="{StaticResource ChoiceTile}" Classes="bigTab" GroupName="VulnTab" IsChecked="{Binding ShowNews}">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="6,4">
+                    <Grid Width="42" Height="42" VerticalAlignment="Center" Margin="0,0,14,0">
+                        <Border CornerRadius="11" Background="{DynamicResource Accent}" Opacity="0.15" />
+                        <TextBlock Text="&#xE789;" Classes="icon" FontSize="19" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Avisos de seguridad" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="Noticias oficiales que tocan a algo que usas" Foreground="{DynamicResource FgFaint}" Classes="label"
+                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="12,0,0,0">
+                        <TextBlock Text="{Binding NewsCount}" Foreground="{Binding NewsCountBrush}" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding NewsCountLabel}" Foreground="{DynamicResource FgFaint}" FontSize="11" HorizontalAlignment="Right" />
+                    </StackPanel>
+                </Grid>
+            </RadioButton>
+        </Grid>
+
+        <!-- AVISO: el informe no se puede leer, falta arkko-stack o la última comprobación falló -->
+        <Border Grid.Row="1" IsVisible="{Binding NoticeVisible}" Background="{Binding NoticeFill}" CornerRadius="{DynamicResource RadiusS}" Margin="0,12,0,0">
+            <Grid>
+                <Border Width="3" HorizontalAlignment="Left" CornerRadius="2" Margin="0,8" Background="{Binding NoticeBrush}" />
+                <DockPanel Margin="14,10,12,10">
+                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="Config_Click" VerticalAlignment="Center" Margin="12,0,0,0"
+                            Content="Configuración" IsVisible="{Binding NoticeConfigVisible}" ToolTip.Tip="Abre Configuración → Seguridad" />
+                    <TextBlock DockPanel.Dock="Left" Text="&#xE7BA;" Classes="icon" FontSize="14" Foreground="{Binding NoticeBrush}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                    <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" LineHeight="18" VerticalAlignment="Center" />
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- ESTADO DE LA PARTE ELEGIDA: cuándo se comprobó, sus filtros y su botón -->
+        <DockPanel Grid.Row="2" Margin="2,14,0,10" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent" ToolTip.Tip="{Binding OriginTip}">
+                <Ellipse Width="8" Height="8" Fill="{Binding AgeBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock Text="{Binding AgeText}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding AgeHint}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="6,0,0,0" />
+            </StackPanel>
+            <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="Run_Click" IsEnabled="{Binding RunEnabled}"
+                    ToolTip.Tip="{Binding RunTip}" ToolTip.ShowOnDisabled="True" VerticalAlignment="Center" Margin="12,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE72C;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="{Binding RunText}" />
+                </StackPanel>
+            </Button>
+            <!-- Equipo y repos: buscar y cómo agrupar -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsVisible="{Binding ShowMachine}" VerticalAlignment="Center">
+                <TextBox Width="220" Padding="8,4" Text="{Binding Query}" PlaceholderText="Buscar componente o repo" VerticalAlignment="Center" Margin="0,0,16,0" />
+                <TextBlock Text="Agrupar por" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="VulnGroup" IsChecked="{Binding ByWhere}" Content="Dónde" Margin="0,0,6,0" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="VulnGroup" IsChecked="{Binding ByKind}" Content="Tipo" />
+            </StackPanel>
+            <!-- Avisos: por revisar o ya revisados -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsVisible="{Binding ShowNews}" VerticalAlignment="Center">
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="VulnNews" IsChecked="{Binding ShowPending}" Content="{Binding PendingChip}" Margin="0,0,6,0" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="VulnNews" IsChecked="{Binding ShowReviewed}" Content="{Binding ReviewedChip}" />
+            </StackPanel>
+        </DockPanel>
+
+        <ScrollViewer Grid.Row="3" Name="Scroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Panel>
+                <!-- EQUIPO Y REPOS: una tabla agrupada por dónde o por tipo; cada fila se abre en su sitio -->
+                <Border Classes="lens" Padding="0" IsVisible="{Binding MachineTableVisible}" ClipToBounds="True" VerticalAlignment="Top">
+                    <StackPanel>
+                        <Grid ColumnDefinitions="2.3*,1.1*,3.4*,1.1*,0.7*,28" Margin="16,10">
+                            <TextBlock Text="COMPONENTE" Classes="columnHead" />
+                            <TextBlock Grid.Column="1" Text="DÓNDE" Classes="columnHead" Margin="8,0" />
+                            <TextBlock Grid.Column="2" Text="QUÉ PASA" Classes="columnHead" />
+                            <TextBlock Grid.Column="3" Text="ESTADO" Classes="columnHead" />
+                            <TextBlock Grid.Column="4" Text="DESDE" Classes="columnHead" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:VulnRow">
+                                    <Panel>
+                                        <!-- Cabecera de grupo: un repo con su color, o un tipo con lo que suele hacer falta -->
+                                        <Border IsVisible="{Binding IsGroup}" Classes="rowLine" Background="{DynamicResource TaskSection}" Padding="16,10,16,9">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <Border Width="10" Height="10" CornerRadius="3" Background="{Binding PlaceBrush}" VerticalAlignment="Center"
+                                                            IsVisible="{Binding !GroupGlyphVisible}" />
+                                                    <TextBlock Text="{Binding GroupGlyph}" Classes="icon" FontSize="13" Foreground="{DynamicResource FgMuted}"
+                                                               VerticalAlignment="Center" IsVisible="{Binding GroupGlyphVisible}" />
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding GroupHelp}" IsVisible="{Binding GroupHelpVisible}" Foreground="{DynamicResource FgMuted}"
+                                                           Classes="label" TextWrapping="Wrap" Margin="23,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                        <!-- Una comprobación: su fila y, abierta, lo que pasa, cómo se arregla y su historial -->
+                                        <Border IsVisible="{Binding IsItem}" Classes="rowLine" Background="{Binding RowTint}">
+                                            <StackPanel>
+                                                <Button Theme="{StaticResource PlainButton}" Classes="row" Click="Row_Click" Tag="{Binding}">
+                                                    <Grid ColumnDefinitions="2.3*,1.1*,3.4*,1.1*,0.7*,28" Background="{Binding RowFill}">
+                                                        <Rectangle Width="3" HorizontalAlignment="Left" Fill="{Binding StripeBrush}" IsVisible="{Binding StripeVisible}" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="16,9,0,9">
+                                                            <!-- El logo de la pieza sobre fondo neutro, con su nota de autor o de marca; si no tiene, sus letras sobre su color -->
+                                                            <Border Width="30" Height="30" CornerRadius="8" Background="{DynamicResource TrackFill}" IsVisible="{Binding LogoVisible}"
+                                                                    ToolTip.Tip="{Binding LogoCredit}">
+                                                                <Image Source="{Binding LogoImage}" Width="20" Height="20" Stretch="Uniform"
+                                                                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+                                                            </Border>
+                                                            <Border Width="30" Height="30" CornerRadius="8" Background="{Binding AvatarBrush}" IsVisible="{Binding LettersVisible}">
+                                                                <TextBlock Classes="ownColor" Text="{Binding AvatarText}" Foreground="White" FontSize="11" FontWeight="Bold"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding KindText}" Foreground="{DynamicResource FgFaint}" Classes="label" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="8,0">
+                                                            <Border Width="8" Height="8" CornerRadius="2" Background="{Binding PlaceBrush}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Place}" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <!-- Qué pasa: las versiones si dicen algo claro; si no, la frase del informe -->
+                                                        <TextBlock Grid.Column="2" Text="{Binding Subtitle}" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis"
+                                                                   VerticalAlignment="Center" Margin="0,0,12,0" ToolTip.Tip="{Binding Subtitle}" IsVisible="{Binding SentenceVisible}" />
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,0,12,0"
+                                                                    IsVisible="{Binding VersionVisible}" ToolTip.Tip="{Binding Detail}" Background="Transparent">
+                                                            <TextBlock Text="{Binding VersionFrom}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding VersionJoin}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                            <TextBlock Classes="ownColor" Text="{Binding VersionTo}" Foreground="{Binding VersionBrush}" FontFamily="{StaticResource MonoFont}"
+                                                                       FontSize="12.5" VerticalAlignment="Center" IsVisible="{Binding VersionToVisible}" />
+                                                            <TextBlock Classes="ownColor" Text="{Binding VersionRemark}" Foreground="{Binding VersionBrush}" VerticalAlignment="Center"
+                                                                       IsVisible="{Binding VersionRemarkVisible}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                            <Border CornerRadius="6" Padding="8,2" Background="{Binding StateFill}" VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" IsVisible="{Binding DotVisible}" />
+                                                                    <TextBlock Classes="icon ownColor" Text="{Binding StateGlyph}" Foreground="{Binding DotBrush}" FontSize="10"
+                                                                               VerticalAlignment="Center" IsVisible="{Binding StateGlyphVisible}" />
+                                                                    <TextBlock Classes="ownColor" Text="{Binding StateText}" Foreground="{Binding DotBrush}" FontSize="11" FontWeight="SemiBold" />
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <!-- La gravedad de lo que está al día: no corre prisa, pero existe -->
+                                                            <Border CornerRadius="5" Padding="6,1" BorderThickness="1" BorderBrush="{Binding TagBrush}" VerticalAlignment="Center"
+                                                                    IsVisible="{Binding TagVisible}">
+                                                                <TextBlock Classes="ownColor" Text="{Binding TagText}" Foreground="{Binding TagBrush}" FontSize="10.5" FontWeight="SemiBold" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="4" Text="{Binding When}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Chevron}" Classes="icon" FontSize="10" Foreground="{DynamicResource FgFaint}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Button>
+                                                <!-- Abierta: el arreglo y su historia, en dos tarjetas, con el mismo aire arriba y abajo -->
+                                                <Grid IsVisible="{Binding IsOpen}" Margin="56,14,16,14" ColumnDefinitions="3*,12,2*">
+                                                    <Border BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" CornerRadius="{DynamicResource RadiusM}"
+                                                            Background="{DynamicResource TaskSection}" Padding="16">
+                                                        <StackPanel Spacing="12">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <Border Width="22" Height="22" CornerRadius="6" Background="{Binding StateFill}">
+                                                                    <TextBlock Text="{Binding AdviceGlyph}" Classes="icon" FontSize="11" Foreground="{Binding DotBrush}"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                </Border>
+                                                                <TextBlock Text="{Binding AdviceTitle}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding Detail}" IsVisible="{Binding DetailLineVisible}" Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" />
+                                                            <local:FixTextBlock Parts="{Binding AdviceParts}" TextWrapping="Wrap" FontSize="14" LineSpacing="5" />
+                                                            <TextBlock Text="{Binding SupportText}" IsVisible="{Binding SupportVisible}" Foreground="{DynamicResource FgMuted}" />
+                                                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                                                <Button Theme="{StaticResource ChipButton}" Click="CopyFix_Click" Tag="{Binding}" IsVisible="{Binding AdviceVisible}"
+                                                                        ToolTip.Tip="Copia el arreglo, para pegarlo en una tarea o una nota">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="&#xE8C8;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                                        <TextBlock Text="Copiar" />
+                                                                    </StackPanel>
+                                                                </Button>
+                                                                <TextBlock Text="{Binding MetaText}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding MetaText}" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border Grid.Column="2" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" CornerRadius="{DynamicResource RadiusM}"
+                                                            Background="{DynamicResource TaskSection}" Padding="16">
+                                                        <StackPanel Spacing="12">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <Border Width="22" Height="22" CornerRadius="6" Background="{DynamicResource TrackFill}">
+                                                                    <TextBlock Text="&#xE81C;" Classes="icon" FontSize="11" Foreground="{DynamicResource FgMuted}"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                </Border>
+                                                                <TextBlock Text="Historial" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <ItemsControl ItemsSource="{Binding History}" ItemTemplate="{StaticResource HistoryRow}" />
+                                                            <TextBlock Text="Sin cambios apuntados todavía." IsVisible="{Binding !HistoryVisible}" Foreground="{DynamicResource FgFaint}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </Panel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="{Binding TableEmptyText}" IsVisible="{Binding TableEmptyVisible}" Foreground="{DynamicResource FgMuted}" Margin="16,12" />
+                        <!-- Lo que está al día, plegado al pie -->
+                        <Border Classes="rowLine" Padding="16,9" IsVisible="{Binding OkFooterVisible}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="8" Height="8" Fill="{Binding OkBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding OkText}" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                <Button Theme="{StaticResource ChipButton}" Click="ToggleOk_Click" Content="{Binding OkToggleText}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- AVISOS: cada uno como una noticia; abierto, el protocolo en cuatro pasos con sus botones -->
+                <StackPanel IsVisible="{Binding NewsListVisible}" VerticalAlignment="Top">
+                    <ItemsControl ItemsSource="{Binding News}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:NewsRow">
+                                <Border Classes="lens" Padding="0" Margin="0,0,0,10" ClipToBounds="True">
+                                    <StackPanel>
+                                        <Button Theme="{StaticResource PlainButton}" Classes="row" Click="News_Click" Tag="{Binding}">
+                                            <Grid ColumnDefinitions="78,*,Auto" Background="Transparent">
+                                                <Border BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,0,1,0" Margin="16,14,14,14" VerticalAlignment="Top">
+                                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding Day}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Month}" Foreground="{DynamicResource FgFaint}" FontSize="11" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Spacing="4" Margin="0,14,12,14">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <Border Width="16" Height="16" CornerRadius="4" Background="{Binding SourceBrush}">
+                                                            <TextBlock Classes="ownColor" Text="{Binding SourceLetter}" Foreground="White" FontSize="9" FontWeight="Bold"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Source}" Foreground="{DynamicResource FgMuted}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Subtitle}" IsVisible="{Binding SubtitleVisible}" Foreground="{DynamicResource FgMuted}" Classes="label" TextWrapping="Wrap" />
+                                                    <ItemsControl ItemsSource="{Binding Parts}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="x:String">
+                                                                <Border Background="{DynamicResource TrackFill}" CornerRadius="5" Padding="7,1" Margin="0,2,6,0">
+                                                                    <TextBlock Text="{Binding}" Foreground="{DynamicResource FgMuted}" FontSize="11" />
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Top" Margin="0,14,16,0">
+                                                    <Border CornerRadius="6" Padding="8,2" Background="{Binding StateFill}" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Ellipse Width="6" Height="6" Fill="{Binding StateBrush}" VerticalAlignment="Center" />
+                                                            <TextBlock Classes="ownColor" Text="{Binding StateText}" Foreground="{Binding StateBrush}" FontSize="11" FontWeight="SemiBold" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Chevron}" Classes="icon" FontSize="10" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+                                        <StackPanel IsVisible="{Binding IsOpen}" Margin="94,0,16,16" Spacing="10">
+                                            <!-- Los cuatro pasos, en fila -->
+                                            <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource StepCard}" IsVisible="{Binding StepsVisible}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <UniformGrid Rows="1" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <TextBlock Text="{Binding ReviewedText}" IsVisible="{Binding !StepsVisible}" Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" />
+                                            <WrapPanel>
+                                                <Button Theme="{StaticResource ActionButton}" Click="OpenLink_Click" Tag="{Binding}" IsVisible="{Binding LinkVisible}" ToolTip.Tip="{Binding Link}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE8A7;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <TextBlock Text="{Binding LinkText}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Theme="{StaticResource ActionButton}" Click="CheckMachine_Click" IsVisible="{Binding CheckVisible}"
+                                                        ToolTip.Tip="Paso 2: comprueba lo que tienes instalado; sale a internet y tarda 1 o 2 minutos">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE72C;" Classes="icon" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <TextBlock Text="Comprobar mi equipo" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Theme="{StaticResource ActionDone}" Click="MarkSeen_Click" Tag="{Binding}" IsVisible="{Binding SeenVisible}"
+                                                        ToolTip.Tip="Paso 4, al terminar: deja de contar como por revisar, aquí y en Claude Code">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE73E;" Classes="icon" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <TextBlock Text="Marcar como revisado…" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding NewsEmptyText}" IsVisible="{Binding NewsEmptyVisible}" Foreground="{DynamicResource FgMuted}" Margin="4,8,0,14" />
+                    <!-- De dónde salen los avisos, en pequeño al pie -->
+                    <StackPanel Orientation="Horizontal" Spacing="14" Margin="4,2,0,0" IsVisible="{Binding SourcesVisible}">
+                        <TextBlock Text="De dónde salen:" Foreground="{DynamicResource FgFaint}" Classes="label" VerticalAlignment="Center" />
+                        <ItemsControl ItemsSource="{Binding Sources}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="14" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:SourceDot">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent" ToolTip.Tip="{Binding Tip}">
+                                        <Ellipse Width="7" Height="7" Fill="{Binding Brush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgFaint}" Classes="label" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Sin nada que enseñar en la parte elegida -->
+                <StackPanel IsVisible="{Binding EmptyVisible}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,48" Spacing="8">
+                    <TextBlock Text="{Binding EmptyGlyph}" Classes="icon" FontSize="28" Foreground="{Binding EmptyBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding EmptyTitle}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding EmptyText}" Foreground="{DynamicResource FgMuted}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="460" />
+                </StackPanel>
+            </Panel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

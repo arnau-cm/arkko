@@ -1,0 +1,66 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Arkko.Desktop"
+        x:Class="Arkko.Desktop.AppDialog"
+        Title="Arkko" WindowDecorations="None" TransparencyLevelHint="Transparent" Background="Transparent"
+        CanResize="False" SizeToContent="WidthAndHeight" ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <!-- Margen para la sombra: la ventana es transparente y la tarjeta flota dentro -->
+    <Border Margin="16" CornerRadius="{DynamicResource RadiusL}" Background="{DynamicResource GlassBase}" BorderBrush="{DynamicResource TipEdge}" BorderThickness="1"
+            BoxShadow="0 4 24 0 #59000000" PointerPressed="Card_PointerPressed">
+        <Border CornerRadius="{DynamicResource RadiusL}" Background="{DynamicResource Sheen}">
+            <Grid Width="480" Margin="24,16,24,16" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                <!-- Icono del tono: pregunta, aviso o error -->
+                <Border Name="IconBack" Width="34" Height="34" CornerRadius="17" VerticalAlignment="Top" Margin="0,0,16,0">
+                    <TextBlock Name="Glyph" Classes="icon" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock Name="Heading" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock Name="Body" Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" Margin="0,8,0,0" LineHeight="18" />
+                </StackPanel>
+
+                <!-- RECUADROS Y NOTA: a todo el ancho, alineados con el icono -->
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                    <Border Name="ItemsBox" Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,12,0,0">
+                        <ItemsControl Name="Items">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <!-- FILAS: una por elemento, con pastilla, título, valor en monoespaciada y detalle debajo -->
+                    <Border Name="RowsBox" Background="{DynamicResource TrackFill}" CornerRadius="{DynamicResource RadiusS}" Padding="8" Margin="0,12,0,0">
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl Name="Rows">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:DialogRow">
+                                        <Grid Margin="8,4" ColumnDefinitions="104,*,Auto" RowDefinitions="Auto,Auto">
+                                            <Border CornerRadius="8" Padding="8,1" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{Binding BadgeFill}">
+                                                <TextBlock Text="{Binding Badge}" Foreground="{Binding BadgeBrush}" Classes="label ownColor" FontWeight="SemiBold" />
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Value}" ToolTip.Tip="{Binding Value}" FontFamily="{StaticResource MonoFont}"
+                                                       Foreground="{DynamicResource FgMuted}" MaxWidth="150" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}"
+                                                       Classes="label" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock Name="Note" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- BOTONES: el principal a la derecha; Esc equivale a cancelar -->
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                    <Button Name="CancelButton" Theme="{StaticResource ChipButton}" Click="Cancel_Click" IsCancel="True" Margin="0,0,8,0" />
+                    <Button Name="ConfirmButton" Theme="{StaticResource PrimaryButton}" Click="Confirm_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+</Window>

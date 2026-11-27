@@ -1,0 +1,213 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.TerminalLayoutView"
+             x:DataType="local:EditorModel">
+    <UserControl.Resources>
+        <!-- Pieza arrastrable: pastilla con su nombre y, si tiene color propio, un punto de ese color -->
+        <DataTemplate x:Key="Block" x:DataType="local:BlockModel">
+            <Border Classes="pill" Classes.selected="{Binding IsSelected}"
+                    PointerPressed="Block_PointerPressed" PointerMoved="Block_PointerMoved" PointerReleased="Block_PointerReleased"
+                    PointerCaptureLost="Block_PointerCaptureLost">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center" Fill="{Binding ColorBrush}" IsVisible="{Binding ColorVisible}" />
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Muestra de color de la paleta -->
+        <DataTemplate x:Key="Swatch" x:DataType="local:Swatch">
+            <Border Width="22" Height="22" CornerRadius="{DynamicResource RadiusS}" Margin="0,0,8,0" Cursor="Hand"
+                    Background="{Binding Brush}" BorderBrush="{DynamicResource LensEdge}" BorderThickness="1"
+                    ToolTip.Tip="{Binding Hex}" PointerReleased="Swatch_Click" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <Style Selector="Border.pill">
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource LensEdge}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.pill.selected">
+            <Setter Property="Background" Value="{DynamicResource ChipOn}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+        </Style>
+        <Style Selector="Border.zone">
+            <Setter Property="Padding" Value="8,8,2,2" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+            <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+        </Style>
+        <Style Selector="TextBlock.zoneTitle">
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </UserControl.Styles>
+
+    <!-- La copia de la pieza que se arrastra se pinta encima de todo el editor -->
+    <Panel Name="Root">
+        <StackPanel>
+            <!-- INTERRUPTORES -->
+            <Border Classes="lens" Padding="16,8">
+                <StackPanel>
+                    <DockPanel Margin="0,2,0,8">
+                        <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding ShowSummary}" VerticalAlignment="Center" />
+                        <StackPanel>
+                            <TextBlock Text="Resumen al terminar cada prompt" FontWeight="SemiBold" />
+                            <TextBlock Text="La línea «2m33s · 20,6k tokens…» que aparece tras cada respuesta" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                        </StackPanel>
+                    </DockPanel>
+                    <Border Height="1" Background="{DynamicResource TrackEdge}" />
+                    <DockPanel Margin="0,8,0,2">
+                        <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding ShowStatusline}" VerticalAlignment="Center" />
+                        <StackPanel>
+                            <TextBlock Text="Barra de estado" FontWeight="SemiBold" />
+                            <TextBlock Text="La línea que Claude Code muestra bajo el prompt, con las piezas de abajo" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- PESTAÑAS: qué línea se edita -->
+            <StackPanel Orientation="Horizontal" Margin="2,12,0,0">
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="TerminalTab" IsChecked="{Binding StatuslineTab}" Content="Barra de estado" />
+                <RadioButton Theme="{StaticResource ChipRadio}" GroupName="TerminalTab" IsChecked="{Binding SummaryTab}" Content="Resumen del prompt" />
+            </StackPanel>
+
+            <!-- PIEZAS DE LA BARRA DE ESTADO: se atenúan si la barra está oculta -->
+            <StackPanel IsEnabled="{Binding ShowStatusline}" Opacity="{Binding StatuslineOpacity}" IsVisible="{Binding StatuslineTabVisible}">
+                <TextBlock Classes="menuLabel" Text="BARRA DE ESTADO" Margin="2,8,0,8" />
+                <Border Classes="lens" Padding="16,12">
+                    <StackPanel>
+                        <TextBlock Text="DISPONIBLES" Classes="zoneTitle" Margin="2,0,0,8" />
+                        <Border Name="StatusTray" Classes="zone" MinHeight="40">
+                            <WrapPanel>
+                                <ItemsControl ItemsSource="{Binding Available}" ItemTemplate="{StaticResource Block}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <Button Theme="{StaticResource ChipButton}" Margin="0,0,8,8" Click="AddSeparator_Click" ToolTip.Tip="Añade un separador al final de la línea">
+                                    <TextBlock Text="+ Separador  |" FontWeight="SemiBold" />
+                                </Button>
+                            </WrapPanel>
+                        </Border>
+
+                        <TextBlock Text="EN LA TERMINAL" Classes="zoneTitle" Margin="2,12,0,2" />
+                        <TextBlock Text="En la terminal se verá en una sola línea, en este orden." Foreground="{DynamicResource FgFaint}" Classes="caption" Margin="2,0,0,8" />
+                        <Border Name="StatusLine" Classes="zone" MinHeight="44" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1">
+                            <Panel Name="LineArea">
+                                <ItemsControl Name="LineItems" ItemsSource="{Binding Line}" ItemTemplate="{StaticResource Block}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <!-- Marca de dónde caerá la pieza que se arrastra -->
+                                <Canvas IsHitTestVisible="False">
+                                    <Border Name="DropMarker" Width="3" Height="28" CornerRadius="1.5" Background="{DynamicResource Accent}" IsVisible="False" />
+                                </Canvas>
+                            </Panel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- COLOR DE LA PIEZA SELECCIONADA -->
+                <TextBlock Classes="menuLabel" Text="COLOR" Margin="2,8,0,8" />
+                <Border Classes="lens" Padding="16,12">
+                    <Panel>
+                        <TextBlock Text="Selecciona una pieza de la línea para elegir su color." Foreground="{DynamicResource FgFaint}"
+                                   IsVisible="{Binding NoSelectionVisible}" />
+                        <StackPanel IsVisible="{Binding SelectionVisible}">
+                            <TextBlock Margin="0,0,0,8">
+                                <Run Text="Color de «" Foreground="{DynamicResource FgMuted}" /><Run Text="{Binding Selected.Label, Mode=OneWay, FallbackValue=''}" FontWeight="SemiBold" /><Run Text="»" Foreground="{DynamicResource FgMuted}" />
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <ItemsControl ItemsSource="{Binding Palette}" ItemTemplate="{StaticResource Swatch}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <Button Theme="{StaticResource ChipButton}" Margin="8,0,8,0" Click="DefaultColor_Click" Content="{Binding DefaultColorText}" />
+                                <TextBlock Text="#" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,3,0" />
+                                <TextBox Name="HexBox" Width="76" VerticalAlignment="Center" Padding="4,2" MinHeight="0" FontFamily="{StaticResource MonoFont}"
+                                         KeyDown="HexBox_KeyDown" LostFocus="HexBox_LostFocus" ToolTip.Tip="Color propio en hexadecimal, por ejemplo FF8000" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Panel>
+                </Border>
+            </StackPanel>
+
+            <!-- PIEZAS DEL RESUMEN: se atenúan si el resumen está oculto -->
+            <StackPanel IsEnabled="{Binding ShowSummary}" Opacity="{Binding SummaryOpacity}" IsVisible="{Binding SummaryTabVisible}">
+                <TextBlock Classes="menuLabel" Text="RESUMEN DEL PROMPT" Margin="2,8,0,8" />
+                <Border Classes="lens" Padding="16,12">
+                    <StackPanel>
+                        <TextBlock Foreground="{DynamicResource FgMuted}" Classes="body" TextWrapping="Wrap" Margin="0,0,0,8"
+                                   Text="La línea que sale en Claude Code al terminar cada respuesta. Las piezas se separan solas con «|», y las que no tienen dato en un prompt no salen." />
+
+                        <TextBlock Text="DISPONIBLES" Classes="zoneTitle" Margin="2,0,0,8" />
+                        <Border Name="SummaryTray" Classes="zone" MinHeight="40">
+                            <ItemsControl ItemsSource="{Binding SummaryAvailable}" ItemTemplate="{StaticResource Block}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </Border>
+
+                        <TextBlock Text="EN EL RESUMEN" Classes="zoneTitle" Margin="2,12,0,8" />
+                        <Border Name="SummaryZone" Classes="zone" MinHeight="44" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1">
+                            <Panel Name="SummaryArea">
+                                <ItemsControl Name="SummaryItems" ItemsSource="{Binding SummaryLine}" ItemTemplate="{StaticResource Block}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <Canvas IsHitTestVisible="False">
+                                    <Border Name="SummaryMarker" Width="3" Height="28" CornerRadius="1.5" Background="{DynamicResource Accent}" IsVisible="False" />
+                                </Canvas>
+                            </Panel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- VISTA PREVIA: se ve entera, saltando de línea; en la terminal real va en una sola y se corta si no cabe -->
+            <TextBlock Classes="menuLabel" Text="VISTA PREVIA" Margin="2,8,0,8" />
+            <Border CornerRadius="{DynamicResource RadiusM}" Background="{StaticResource TerminalBack}" BorderBrush="{StaticResource TerminalEdge}"
+                    BorderThickness="1" Padding="12,8">
+                <TextBlock Name="Preview" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{StaticResource TerminalText}"
+                           TextWrapping="Wrap" LineHeight="19" />
+            </Border>
+            <TextBlock Text="{Binding PreviewNote}" Foreground="{DynamicResource FgFaint}" Classes="caption" Margin="2,8,0,0" TextWrapping="Wrap" />
+
+            <!-- Cada cambio se guarda solo; esta nota lo confirma un momento -->
+            <TextBlock Name="SavedNote" Text="Guardado: se aplica en el siguiente pintado de la terminal" Foreground="{DynamicResource FgFaint}"
+                       FontSize="11" Margin="2,12,0,0" Opacity="0">
+                <TextBlock.Transitions>
+                    <Transitions>
+                        <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
+                    </Transitions>
+                </TextBlock.Transitions>
+            </TextBlock>
+        </StackPanel>
+
+        <!-- CAPA DEL ARRASTRE: la copia de la pieza, pegada al ratón -->
+        <Canvas Name="DragLayer" IsHitTestVisible="False" />
+    </Panel>
+</UserControl>

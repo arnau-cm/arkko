@@ -1,0 +1,862 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Arkko.Desktop"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
+        x:Class="Arkko.Desktop.PanelWindow"
+        x:DataType="local:PanelModel"
+        Title="Arkko" Icon="{DynamicResource AppWindowIcon}"
+        Width="1180" Height="760" MinWidth="720" MinHeight="480"
+        WindowDecorations="BorderOnly" ExtendClientAreaToDecorationsHint="True" ExtendClientAreaTitleBarHeightHint="48"
+        Background="{DynamicResource GlassBase}">
+    <!-- Ventana normal del sistema (encajar, dividir, maximizar) con la barra de título dibujada por la app -->
+
+    <Window.Resources>
+        <!-- FICHA DE UNA SECCIÓN DEL MENÚ PLEGADO: nombre, qué hay en ella y el dato de ahora con su punto -->
+        <DataTemplate x:Key="NavTipTemplate" x:DataType="local:NavTip">
+            <StackPanel MaxWidth="280">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Text}" Foreground="{DynamicResource FgMuted}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0" IsVisible="{Binding LiveVisible}">
+                    <Ellipse Width="7" Height="7" Fill="{Binding LiveBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                    <TextBlock Text="{Binding Live}" FontWeight="SemiBold" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- ELEMENTO DEL MENÚ LATERAL: icono siempre; nombre solo con el menú desplegado -->
+        <ControlTheme x:Key="NavItem" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="Nav" />
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ToolTip.Placement" Value="Right" />
+            <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" Height="38" Margin="8,2" CornerRadius="{DynamicResource RadiusS}" Background="Transparent">
+                        <Grid ColumnDefinitions="40,*">
+                            <Border Name="Mark" Width="3" Height="16" CornerRadius="1.5" HorizontalAlignment="Left"
+                                    Background="{DynamicResource SwitchOn}" IsVisible="False" />
+                            <TextBlock Text="{TemplateBinding Tag}" Classes="icon" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <!-- Aviso con el menú plegado: un punto sobre el icono -->
+                            <Ellipse Name="BadgeDot" Width="8" Height="8" Fill="{DynamicResource Danger}"
+                                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
+                                <Ellipse.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="(local:NavBadge.Any)" RelativeSource="{RelativeSource TemplatedParent}" />
+                                        <ReflectionBinding Path="MenuCollapsed" />
+                                    </MultiBinding>
+                                </Ellipse.IsVisible>
+                            </Ellipse>
+                            <DockPanel Grid.Column="1" IsVisible="{ReflectionBinding MenuExpanded}">
+                                <!-- Aviso con el menú desplegado: el número, en una pastilla; y, si lo hay, el segundo, en ámbar al lado -->
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" Margin="8,0,8,0" VerticalAlignment="Center"
+                                            IsVisible="{Binding (local:NavBadge.Any), RelativeSource={RelativeSource TemplatedParent}}">
+                                    <Border Name="Badge" Background="{DynamicResource Danger}" CornerRadius="9" MinWidth="18" Height="18" Padding="4,0"
+                                            IsVisible="{Binding (local:NavBadge.Text), RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <TextBlock Classes="ownColor" Name="BadgeText" Text="{Binding (local:NavBadge.Text), RelativeSource={RelativeSource TemplatedParent}}"
+                                                   Foreground="White" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <Border Background="{DynamicResource DataFiveHour}" CornerRadius="9" MinWidth="18" Height="18" Padding="4,0"
+                                            IsVisible="{Binding (local:NavBadge.Second), RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <TextBlock Classes="ownColor" Text="{Binding (local:NavBadge.Second), RelativeSource={RelativeSource TemplatedParent}}"
+                                                   Foreground="{DynamicResource PrimaryText}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="{TemplateBinding Content}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^.soon /template/ Border#Badge">
+                <Setter Property="Background" Value="{DynamicResource DataFiveHour}" />
+            </Style>
+            <Style Selector="^.soon /template/ TextBlock#BadgeText">
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            </Style>
+            <Style Selector="^.soon /template/ Ellipse#BadgeDot">
+                <Setter Property="Fill" Value="{DynamicResource DataFiveHour}" />
+            </Style>
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+            </Style>
+            <Style Selector="^:checked">
+                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            </Style>
+            <Style Selector="^:checked /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+            </Style>
+            <Style Selector="^:checked /template/ Border#Mark">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+            <Style Selector="^:disabled">
+                <Setter Property="Opacity" Value="0.4" />
+            </Style>
+        </ControlTheme>
+
+        <!-- BOTÓN DEL MENÚ: el icono de la app, que al pasar el ratón se convierte en ☰ -->
+        <ControlTheme x:Key="LogoToggle" TargetType="Button">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" CornerRadius="{DynamicResource RadiusM}" Background="Transparent">
+                        <Grid>
+                            <Image Name="Logo" Source="{DynamicResource AppLogo}" RenderOptions.BitmapInterpolationMode="HighQuality" Width="22" Height="22">
+                                <Image.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                    </Transitions>
+                                </Image.Transitions>
+                            </Image>
+                            <TextBlock Name="Burger" Text="&#xE700;" Classes="icon" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+                                <TextBlock.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+                                    </Transitions>
+                                </TextBlock.Transitions>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Image#Logo">
+                <Setter Property="Opacity" Value="0" />
+            </Style>
+            <Style Selector="^:pointerover /template/ TextBlock#Burger">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+        </ControlTheme>
+
+        <!-- CATEGORÍA DE LA CONFIGURACIÓN: fila de texto que se marca al elegirla -->
+        <ControlTheme x:Key="ConfigTab" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="ConfigTab" />
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,1" Background="Transparent">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{TemplateBinding Tag}" Classes="icon" FontSize="12" Width="22" VerticalAlignment="Center" />
+                            <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+            </Style>
+            <Style Selector="^:checked">
+                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            </Style>
+            <Style Selector="^:checked /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+            </Style>
+        </ControlTheme>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- Cabecera de columna de la tabla -->
+        <Style Selector="TextBlock.columnHead">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <!-- Sección o gráfica sin datos -->
+        <Style Selector="TextBlock.pending">
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Grid.barColumn:pointerover > Border.hover">
+            <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+        </Style>
+        <Style Selector="Grid.projectRow:pointerover > Border.hover">
+            <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+        </Style>
+        <Style Selector="Grid.projectRow.worktree TextBlock.name">
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+            <Setter Property="FontWeight" Value="Normal" />
+        </Style>
+        <Style Selector="Grid.projectRow.worktree TextBlock.tokens">
+            <Setter Property="FontWeight" Value="Normal" />
+        </Style>
+        <Style Selector="Border.costlyRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+        </Style>
+        <Style Selector="Border.costlyRow.top TextBlock.rank">
+            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Border.costlyRow.noText TextBlock.preview">
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="FontStyle" Value="Italic" />
+        </Style>
+        <!-- Dibujo de cada vista de Sesiones en sus chips: el mismo que en el desplegable de la página -->
+        <Style Selector="Path.viewIcon">
+            <Setter Property="Width" Value="13" />
+            <Setter Property="Height" Value="13" />
+            <Setter Property="Stretch" Value="Uniform" />
+            <Setter Property="Stroke" Value="{DynamicResource Accent}" />
+            <Setter Property="StrokeThickness" Value="1.4" />
+            <Setter Property="StrokeJoin" Value="Round" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- Los ajustes que se apagan solos, como «no molestar» con los avisos silenciados -->
+        <Style Selector="StackPanel.dimmable:disabled">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+    </Window.Styles>
+
+    <Grid Name="Root">
+        <Border Background="{DynamicResource Sheen}" IsHitTestVisible="False" />
+        <Grid ColumnDefinitions="Auto,*">
+            <!-- MENÚ LATERAL: se pliega a un riel de iconos -->
+            <Border Width="{Binding MenuWidth}" Background="{DynamicResource ButtonFill}"
+                    BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,0,1,0" ClipToBounds="True">
+                <DockPanel>
+                    <!-- Cabecera del menú: el icono de la app es también el botón de plegar -->
+                    <Grid DockPanel.Dock="Top" Height="48" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <Button Theme="{StaticResource LogoToggle}" Click="ToggleMenu_Click" ToolTip.Tip="{Binding MenuToggleTip}"
+                                    chrome:WindowDecorationProperties.ElementRole="User" />
+                            <TextBlock Text="Arkko" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="8,0,0,0"
+                                       IsVisible="{Binding MenuExpanded}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,8">
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE713;" Content="Configuración" IsChecked="{Binding IsConfig}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <TextBlock Text="{Binding AppVersion}" Foreground="{DynamicResource FgFaint}" Classes="caption"
+                                   Margin="16,8,0,0" IsVisible="{Binding MenuExpanded}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,8,0,0">
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE80F;" Content="Inicio" IsChecked="{Binding IsHome}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE8F2;" Content="Sesiones" IsChecked="{Binding IsSessions}"
+                                     local:NavBadge.Text="{Binding SessionsBadge}" PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE121;" Content="Relojes" IsChecked="{Binding IsClocks}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE762;" Content="Tablero" IsChecked="{Binding IsTasks}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE8B7;" Content="Worktrees" IsChecked="{Binding IsWorktrees}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE787;" Content="Diario" IsChecked="{Binding IsDiary}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE7C3;" Content="Artifacts" IsChecked="{Binding IsArtifacts}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE9D2;" Content="Estadísticas" IsChecked="{Binding IsStats}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE756;" Content="Terminal" IsEnabled="False"
+                                     ToolTip.Tip="Terminal: próximamente, una terminal propia para trabajar con las sesiones sin salir de la app" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE8D7;" Content="Tokens" IsChecked="{Binding IsTokens}"
+                                     local:NavBadge.Text="{Binding TokensBadge}" Classes.soon="{Binding TokensBadgeSoon}"
+                                     PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xE72E;" Content="Seguridad" IsChecked="{Binding IsSecurity}"
+                                     local:NavBadge.Text="{Binding SecurityBadge}" PointerEntered="NavItem_PointerEntered" />
+                        <RadioButton Theme="{StaticResource NavItem}" Tag="&#xEBE8;" Content="Vulnerabilidades" IsChecked="{Binding IsVulnerabilities}"
+                                     local:NavBadge.Text="{Binding VulnerabilitiesBadge}" local:NavBadge.Second="{Binding VulnerabilitiesUnseenBadge}"
+                                     Classes.soon="{Binding VulnerabilitiesOnlyUnseen}" PointerEntered="NavItem_PointerEntered" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <DockPanel Grid.Column="1">
+                <!-- CATEGORÍAS DE LA CONFIGURACIÓN: su propio panel, a toda la altura y con su título arriba -->
+                <Border DockPanel.Dock="Left" Width="226" IsVisible="{Binding ConfigVisible}"
+                        Background="{DynamicResource SubNavFill}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,0,1,0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Height="48" Orientation="Horizontal" Margin="16,0,0,0"
+                                    chrome:WindowDecorationProperties.ElementRole="TitleBar">
+                            <TextBlock Text="&#xE713;" Classes="icon" FontSize="15" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Configuración" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Margin="8,4,8,12">
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE771;" Content="General" IsChecked="{Binding IsGeneral}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE8F2;" Content="Sesiones" IsChecked="{Binding IsSessionsConfig}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE943;" Content="Código" IsChecked="{Binding IsCodeConfig}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE9D5;" Content="Tableros" IsChecked="{Binding IsBoardsConfig}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xEA8F;" Content="Avisos" IsChecked="{Binding IsAlerts}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE73F;" Content="Vista flotante" IsChecked="{Binding IsFloating}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE7F4;" Content="Pastilla" IsChecked="{Binding IsPillConfig}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE756;" Content="Terminal" IsChecked="{Binding IsTerminal}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE9F9;" Content="Datos y retención" IsChecked="{Binding IsData}" />
+                            <RadioButton Theme="{StaticResource ConfigTab}" Tag="&#xE72E;" Content="Seguridad" IsChecked="{Binding IsSecurityConfig}" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- BARRA DE TÍTULO: nombre de la sección, sus acciones y los botones de la ventana -->
+                <Grid DockPanel.Dock="Top" Height="48" Background="Transparent" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <!-- Con el menú oculto del todo, su botón queda aquí -->
+                        <Button Theme="{StaticResource LogoToggle}" Click="ToggleMenu_Click" ToolTip.Tip="{Binding MenuToggleTip}"
+                                IsVisible="{Binding TitleMenuVisible}" Margin="0,0,8,0" chrome:WindowDecorationProperties.ElementRole="User" />
+                        <!-- En la configuración el título va en su panel de categorías -->
+                        <TextBlock Text="{Binding SectionTitle}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" Margin="8,0,0,0"
+                                   IsVisible="{Binding TitleTextVisible}" />
+                    </StackPanel>
+
+                    <!-- Periodo: solo en las estadísticas -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding StatsVisible}"
+                                chrome:WindowDecorationProperties.ElementRole="User">
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Period" IsChecked="{Binding IsToday}" Content="Hoy" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Period" IsChecked="{Binding IsWeek}" Content="7 días" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Period" IsChecked="{Binding IsMonth}" Content="30 días" />
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="Period" IsChecked="{Binding IsAll}" Content="Todo" />
+                        <!-- Fuera de «Hoy» se oculta sin soltar su sitio: si no, los chips del periodo se recolocan bajo el cursor -->
+                        <Border Width="1" Height="16" Background="{DynamicResource TrackEdge}" Margin="4,0,12,0" VerticalAlignment="Center"
+                                Opacity="{Binding WorkHoursOpacity}" />
+                        <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding WorkHoursOnly}" ToolTip.Tip="{Binding WorkHoursTip}"
+                                      Opacity="{Binding WorkHoursOpacity}" IsHitTestVisible="{Binding IsToday}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE823;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Horario laboral" />
+                            </StackPanel>
+                        </ToggleButton>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"
+                                chrome:WindowDecorationProperties.ElementRole="User">
+                        <Button Theme="{StaticResource ChipButton}" Click="Export_Click" Margin="0,0,8,0" IsVisible="{Binding StatsVisible}"
+                                ToolTip.Tip="Guarda los prompts del periodo en un CSV que Excel abre directamente (sin el texto de los prompts)">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Exportar CSV" />
+                            </StackPanel>
+                        </Button>
+                        <Button Theme="{StaticResource ChipButton}" Click="Floating_Click" Margin="0,0,8,0"
+                                ToolTip.Tip="Vuelve a la ventana flotante, siempre encima, con las sesiones">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE73F;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Vista flotante" />
+                            </StackPanel>
+                        </Button>
+                        <Button Theme="{StaticResource BarButton}" Click="Minimize_Click" ToolTip.Tip="Minimizar" Content="&#xE921;" />
+                        <Button Theme="{StaticResource BarButton}" Click="Maximize_Click" ToolTip.Tip="{Binding MaximizeTip}" Content="{Binding MaximizeGlyph}" />
+                        <Button Theme="{StaticResource CloseButton}" Click="Close_Click" ToolTip.Tip="Cerrar Arkko" Content="&#xE8BB;" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <!-- INICIO: arriba, límites y consumo de hoy; abajo, el tablero de sesiones por estado -->
+                    <Grid Name="HomePage" x:DataType="local:MainViewModel" Margin="16,4,16,12" RowDefinitions="Auto,*">
+                        <Grid Margin="0,0,0,16" ColumnDefinitions="*,*">
+                            <!-- Las dos tarjetas llenan su columna: miden lo mismo, la de la más alta -->
+                            <DockPanel Margin="0,0,8,0">
+                                <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="LÍMITES DE USO" Margin="2,0,0,8" />
+                                <!-- Un bloque por suscripción, con su logo; de momento, la de Claude -->
+                                <Border Classes="lens" Padding="12,10" Margin="0">
+                                    <DockPanel>
+                                        <DockPanel DockPanel.Dock="Top" Margin="2,0,2,10">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding LimitsNote}" Foreground="{DynamicResource FgFaint}" FontSize="11"
+                                                       VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" IsVisible="{Binding LimitsNoteVisible}" />
+                                            <local:ClaudeLogo Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="Claude" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <ItemsControl ItemsSource="{Binding Limits}" ItemTemplate="{StaticResource LimitTile}" Margin="0,0,-8,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </DockPanel>
+                                </Border>
+                            </DockPanel>
+                            <DockPanel Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="HOY POR MODELO" Margin="2,0,0,8" />
+                                <Border Classes="lens" Padding="12,10" Margin="0">
+                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModelsSummary}" />
+                                </Border>
+                            </DockPanel>
+                        </Grid>
+
+                        <DockPanel Grid.Row="1">
+                            <TextBlock DockPanel.Dock="Top" Classes="menuLabel" Text="{Binding SessionsTitle}" Margin="2,0,0,8" />
+                            <!-- Tablero: una columna por estado, cada una con su scroll; las copias que vuelan entre columnas se pintan sobre él -->
+                            <Grid Name="BoardArea" ColumnDefinitions="*,*,*">
+                                <DockPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <Border DockPanel.Dock="Top" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Classes="ownColor" DockPanel.Dock="Right" Text="{Binding RestingCount}" Foreground="{DynamicResource FgMuted}" FontWeight="SemiBold" />
+                                            <Ellipse Width="8" Height="8" Fill="{Binding RestingDot}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="En reposo" FontWeight="SemiBold" />
+                                        </DockPanel>
+                                    </Border>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding RestingSessions}" ItemTemplate="{StaticResource SessionCard}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <local:SessionColumnPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                                <DockPanel Grid.Column="1" Margin="8,0,8,0">
+                                    <Border DockPanel.Dock="Top" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Classes="ownColor" DockPanel.Dock="Right" Text="{Binding WorkingCount}" Foreground="{DynamicResource FgMuted}" FontWeight="SemiBold" />
+                                            <Ellipse Width="8" Height="8" Fill="{Binding WorkingDot}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="Trabajando" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding WorkingAgentsNote}" IsVisible="{Binding WorkingAgentsVisible}" Foreground="{DynamicResource FgFaint}"
+                                                       FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
+                                    </Border>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding WorkingSessions}" ItemTemplate="{StaticResource SessionCard}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <local:SessionColumnPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                                <DockPanel Grid.Column="2" Margin="8,0,0,0">
+                                    <Border DockPanel.Dock="Top" Background="{DynamicResource ButtonFill}" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Classes="ownColor" DockPanel.Dock="Right" Text="{Binding WaitingCount}" Foreground="{DynamicResource FgMuted}" FontWeight="SemiBold" />
+                                            <Ellipse Width="8" Height="8" Fill="{Binding WaitingDot}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="Te esperan" FontWeight="SemiBold" />
+                                        </DockPanel>
+                                    </Border>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding WaitingSessions}" ItemTemplate="{StaticResource SessionCard}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <local:SessionColumnPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                                <TextBlock Grid.ColumnSpan="3" Text="Sin sesiones abiertas" Foreground="{DynamicResource FgFaint}" Margin="4,52,0,0"
+                                           IsVisible="{Binding NoSessionsVisible}" />
+                            </Grid>
+                        </DockPanel>
+                    </Grid>
+
+                    <!-- ESTADÍSTICAS: su vista, con el periodo en la barra de arriba -->
+                    <local:StatsView Name="StatsPage" IsVisible="{Binding StatsVisible}" />
+
+                    <!-- CONFIGURACIÓN: los ajustes de la categoría elegida, a todo el ancho; las categorías van en su panel -->
+                    <Grid IsVisible="{Binding ConfigVisible}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="16,4,16,12">
+                            <Grid>
+                                <!-- GENERAL -->
+                                <StackPanel IsVisible="{Binding GeneralVisible}">
+                                    <TextBlock Classes="menuLabel" Text="GENERAL" Margin="2,0,0,8" />
+                                    <Border Classes="lens" Padding="16,8">
+                                        <StackPanel>
+                                            <!-- El icono de la app: cada opción es su tecla, sin texto; cuál es cuál lo dice su ficha -->
+                                            <DockPanel Margin="0,8">
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Spacing="2">
+                                                    <RadioButton Name="IconDarkChoice" Theme="{StaticResource ChipRadio}" GroupName="AppIcon" IsChecked="{Binding IconDark}" Padding="8">
+                                                        <Image Source="/Assets/arkko-48.png" RenderOptions.BitmapInterpolationMode="HighQuality" Width="32" Height="32" />
+                                                    </RadioButton>
+                                                    <RadioButton Name="IconLightChoice" Theme="{StaticResource ChipRadio}" GroupName="AppIcon" IsChecked="{Binding IconLight}" Padding="8">
+                                                        <Image Source="/Assets/arkko-claro-48.png" RenderOptions.BitmapInterpolationMode="HighQuality" Width="32" Height="32" />
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,16,0" VerticalAlignment="Center">
+                                                    <TextBlock Classes="settingName" Text="Icono de la app" />
+                                                    <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                                               Text="El de las ventanas, la bandeja y los logos de la app; cambia al momento. El del botón anclado a la barra de tareas y el del menú Inicio es siempre el oscuro, y el de las notificaciones, siempre el claro: con el oscuro, Windows invierte sus colores." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <!-- DISEÑO: una ficha por diseño, con la app en miniatura en sus colores -->
+                                            <StackPanel Name="ThemeHost" x:DataType="local:MainViewModel" Margin="0,8">
+                                                <TextBlock Classes="settingName" Text="Diseño" />
+                                                <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                                           Text="Cambia toda la app a la vez: la flotante, el panel, Sesiones y la pastilla, salvo que ella lleve uno propio." />
+                                                <ItemsControl ItemsSource="{Binding AppDesignOptions}" Margin="0,12,-10,0">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Rows="1" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="local:AppDesignOption">
+                                                            <RadioButton Theme="{StaticResource ChoiceTile}" GroupName="AppDesignTile" IsChecked="{Binding IsSelected}"
+                                                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,10,0">
+                                                                <StackPanel>
+                                                                    <local:AppDesignPreview Design="{Binding Design}" />
+                                                                    <TextBlock Text="{Binding Design.Name}" FontWeight="SemiBold" Margin="2,8,0,0" />
+                                                                </StackPanel>
+                                                            </RadioButton>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <DockPanel Margin="0,8">
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="MenuMode" IsChecked="{Binding MenuRailMode}" Content="Riel de iconos" />
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="MenuMode" IsChecked="{Binding MenuHides}" Content="Ocultarlo" />
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Al plegar el menú lateral" />
+                                                    <TextBlock Classes="settingHint" Text="Riel de iconos: se queda una columna estrecha con los iconos. Ocultarlo: desaparece y su botón pasa a la barra de título." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <!-- Horario laboral: un chip por día y la franja en pasos de media hora -->
+                                            <DockPanel Margin="0,8">
+                                                <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <ItemsControl ItemsSource="{Binding WorkDays}" HorizontalAlignment="Right">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="local:WorkDayOption">
+                                                                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding IsOn}" Content="{Binding Letter}"
+                                                                              ToolTip.Tip="{Binding Name}" MinWidth="34" Margin="0,0,4,0" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,4,0">
+                                                        <TextBlock Text="De" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <Button Theme="{StaticResource ChipButton}" Click="WorkShift_Click" Tag="start-" Content="−" ToolTip.Tip="Media hora antes" />
+                                                        <TextBlock Text="{Binding WorkStart}" FontWeight="SemiBold" Width="44" TextAlignment="Center" VerticalAlignment="Center" />
+                                                        <Button Theme="{StaticResource ChipButton}" Click="WorkShift_Click" Tag="start+" Content="+" ToolTip.Tip="Media hora después" />
+                                                        <TextBlock Text="a" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="12,0,8,0" />
+                                                        <Button Theme="{StaticResource ChipButton}" Click="WorkShift_Click" Tag="end-" Content="−" ToolTip.Tip="Media hora antes" />
+                                                        <TextBlock Text="{Binding WorkEnd}" FontWeight="SemiBold" Width="44" TextAlignment="Center" VerticalAlignment="Center" />
+                                                        <Button Theme="{StaticResource ChipButton}" Click="WorkShift_Click" Tag="end+" Content="+" ToolTip.Tip="Media hora después" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Horario laboral" />
+                                                    <TextBlock Classes="settingHint" Text="Los días y la franja que cuenta el filtro «Horario laboral» de Estadísticas, en «Hoy»: con él puesto, solo salen los prompts de esas horas. Es también la franja del chip «Horario laboral» del Diario. Por defecto, de lunes a viernes de 8:00 a 17:00." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- SESIONES: lo que toca a la sección Sesiones -->
+                                <StackPanel IsVisible="{Binding SessionsConfigVisible}">
+                                    <TextBlock Classes="menuLabel" Text="SESIONES" Margin="2,0,0,8" />
+                                    <Border Classes="lens" Padding="16,8">
+                                        <StackPanel>
+                                            <DockPanel Margin="0,8">
+                                                <TextBox Name="UserNameBox" DockPanel.Dock="Right" Width="200" VerticalAlignment="Center" Padding="6,3" MaxLength="40" />
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Tu nombre" />
+                                                    <TextBlock Classes="settingHint" Text="Firma tus mensajes en Sesiones. Vacío, salen como «User»." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <DockPanel Margin="0,8">
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SessionsView" IsChecked="{Binding ViewLive}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Path Classes="viewIcon" Data="M1 8h3l2-5 3 10 2-5h4" />
+                                                            <TextBlock Text="Flujo" />
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SessionsView" IsChecked="{Binding ViewDiagram}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Path Classes="viewIcon" Data="M2 4h12M2 12h12M5 4v8M11 12V8h3M5 8h6" />
+                                                            <TextBlock Text="Diagrama" />
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SessionsView" IsChecked="{Binding ViewNow}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Path Classes="viewIcon" Data="M8 1.5a6.5 6.5 0 1 1 0 13a6.5 6.5 0 1 1 0-13zM8 4.5V8l2.5 1.5" />
+                                                            <TextBlock Text="Ahora" />
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SessionsView" IsChecked="{Binding ViewParte}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Path Classes="viewIcon" Data="M3 2.5h10v11H3zM5.5 5.5h5M5.5 8h5M5.5 10.5h3" />
+                                                            <TextBlock Text="Parte" />
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                    <RadioButton Theme="{StaticResource ChipRadio}" GroupName="SessionsView" IsChecked="{Binding ViewObra}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Path Classes="viewIcon" Data="M1.5 14.5h13M3 14.5V8.5h4v6M7 14.5V3.5h5.5v11M9 6h1.5M9 8.5h1.5M9 11h1.5M4.5 11h1" />
+                                                            <TextBlock Text="Obra" />
+                                                        </StackPanel>
+                                                    </RadioButton>
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Vista por defecto" />
+                                                    <TextBlock Classes="settingHint" Text="Con la que se abre Sesiones: el Flujo del trabajo con sus agentes, el Diagrama como plano, lo que pasa Ahora o el Parte por fases. Después se cambia en su desplegable «Vista»." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <local:GroupColorsView Name="GroupColors" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- AVISOS: lo comparte con el menú de la flotante -->
+                                <StackPanel IsVisible="{Binding AlertsVisible}">
+                                    <TextBlock Classes="menuLabel" Text="AVISOS" Margin="2,0,0,8" />
+                                    <Border Classes="lens" Padding="16,8">
+                                        <StackPanel>
+                                            <StackPanel Name="AlertsHost" x:DataType="local:MainViewModel">
+                                                <DockPanel Margin="0,8">
+                                                    <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding Sound}" VerticalAlignment="Center" />
+                                                    <StackPanel Margin="0,0,16,0">
+                                                        <TextBlock Classes="settingName" Text="Sonido y notificaciones" />
+                                                        <TextBlock Classes="settingHint" Text="Apagado, no suena nada ni salen notificaciones; el contador de la pastilla sigue." />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Border Classes="rule" Margin="0,8" />
+                                                <DockPanel Margin="0,8">
+                                                    <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                        <StackPanel Classes="dimmable" Orientation="Horizontal" IsVisible="{Binding QuietOffVisible}" IsEnabled="{Binding Sound}">
+                                                            <Button Theme="{StaticResource ChipButton}" Click="QuietHour_Click" Margin="0,0,8,0" Content="1 hora" />
+                                                            <Button Theme="{StaticResource ChipButton}" Click="QuietTomorrow_Click" Content="Hasta mañana" />
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" IsVisible="{Binding QuietOnVisible}">
+                                                            <TextBlock Text="{Binding QuietText}" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                            <Button Theme="{StaticResource ChipButton}" Click="QuietOff_Click" Content="Reanudar" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <StackPanel Margin="0,0,16,0">
+                                                        <TextBlock Classes="settingName" Text="No molestar" />
+                                                        <TextBlock Classes="settingHint" Text="Silencio con hora de fin, que se quita solo. Desactivado si los avisos ya están silenciados." />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </StackPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <DockPanel Margin="0,8">
+                                                <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding FirstThresholds}" VerticalAlignment="Center">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="local:RetentionOption">
+                                                            <RadioButton Theme="{StaticResource ChipRadio}" GroupName="{Binding Group}" IsChecked="{Binding IsSelected}" Content="{Binding Label}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Primer aviso de los límites" />
+                                                    <TextBlock Classes="settingHint" Text="Notificación naranja al pasar este porcentaje del límite de 5 h o del semanal." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,8">
+                                                <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding SecondThresholds}" VerticalAlignment="Center">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="local:RetentionOption">
+                                                            <RadioButton Theme="{StaticResource ChipRadio}" GroupName="{Binding Group}" IsChecked="{Binding IsSelected}" Content="{Binding Label}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Segundo aviso de los límites" />
+                                                    <TextBlock Classes="settingHint" Text="Notificación roja al pasar este porcentaje." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- VISTA FLOTANTE -->
+                                <StackPanel IsVisible="{Binding FloatingVisible}">
+                                    <TextBlock Classes="menuLabel" Text="VISTA FLOTANTE" Margin="2,0,0,8" />
+                                    <Border Classes="lens" Padding="16,8">
+                                        <StackPanel Name="FloatingHost" x:DataType="local:MainViewModel">
+                                            <DockPanel Margin="0,8">
+                                                <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding Compact}" VerticalAlignment="Center" />
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Modo compacto" />
+                                                    <TextBlock Classes="settingHint" Text="La flotante en pequeño: límites y sesiones en filas breves, de 3 en 3." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <Border Classes="rule" Margin="0,8" />
+                                            <DockPanel Margin="0,8">
+                                                <ToggleButton DockPanel.Dock="Right" Theme="{StaticResource Switch}" IsChecked="{Binding FadeWhenIdle}" VerticalAlignment="Center" />
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Classes="settingName" Text="Transparente" />
+                                                    <TextBlock Classes="settingHint" Text="Sin el ratón encima, la flotante se vuelve semitransparente para no tapar lo de detrás." />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- PASTILLA: los monitores dibujados, con la pastilla donde saldrá -->
+                                <StackPanel IsVisible="{Binding PillConfigVisible}">
+                                    <StackPanel Name="PillHost" x:DataType="local:MainViewModel">
+                                        <TextBlock Classes="menuLabel" Text="DÓNDE SALE" Margin="2,0,0,8" />
+                                        <Border Classes="lens" Padding="18,16">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="16,0,0,0">
+                                                        <Button Theme="{StaticResource ChipButton}" Click="PreviewPill_Click" Margin="0,0,8,0"
+                                                                ToolTip.Tip="Minimiza a la pastilla para verla en su sitio; un clic en ella vuelve aquí">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <TextBlock Classes="icon" Text="&#xE7B3;" FontSize="12" VerticalAlignment="Center" />
+                                                                <TextBlock Text="Ver cómo queda" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button Theme="{StaticResource ChipButton}" Click="ResetPill_Click"
+                                                                ToolTip.Tip="Abajo a la derecha del monitor donde esté la ventana">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <TextBlock Classes="icon" Text="&#xE777;" FontSize="12" VerticalAlignment="Center" />
+                                                                <TextBlock Text="Volver a la de serie" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <StackPanel>
+                                                        <TextBlock Classes="settingName" Text="Arrastra la pastilla adonde quieras que salga" />
+                                                        <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                                                   Text="En cualquier monitor; pulsar en uno también la lleva allí, y cerca de un borde se pega a él. Si ese monitor no está conectado, sale en el de la ventana." />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <Border Background="{DynamicResource SubNavFill}" CornerRadius="{DynamicResource RadiusM}" Padding="12,10" Margin="0,14,0,0">
+                                                    <local:PillMapView Name="PillMap" />
+                                                </Border>
+                                                <TextBlock Classes="settingHint" TextWrapping="Wrap" Foreground="{DynamicResource Danger}"
+                                                           Text="{Binding PillScreenNote}" IsVisible="{Binding PillScreenMissing}" Margin="0,10,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Classes="menuLabel" Text="DISEÑO" Margin="2,22,0,8" />
+                                        <Border Classes="lens" Padding="18,16">
+                                            <StackPanel>
+                                                <TextBlock Classes="settingName" Text="Cómo se ve la pastilla" />
+                                                <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                                                           Text="Por defecto, como el resto de la app (Configuración → General); también puede llevar uno propio. Las gotas llevan siempre el color de su estado." />
+                                                <ItemsControl ItemsSource="{Binding PillDesignOptions}" Margin="0,14,-10,0">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Rows="1" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="local:PillDesignOption">
+                                                            <RadioButton Theme="{StaticResource ChoiceTile}" GroupName="PillDesign" IsChecked="{Binding IsSelected}"
+                                                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,10,0">
+                                                                <StackPanel>
+                                                                    <local:PillPreview Design="{Binding Design}" />
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="2,10,0,0" />
+                                                                    <TextBlock Classes="settingHint" Text="{Binding Description}" TextWrapping="Wrap" Margin="2,2,0,2" />
+                                                                </StackPanel>
+                                                            </RadioButton>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- CÓDIGO: los colores del código de cada lenguaje en Sesiones -->
+                                <StackPanel IsVisible="{Binding CodeConfigVisible}">
+                                    <TextBlock Classes="menuLabel" Text="CÓDIGO" Margin="2,0,0,8" />
+                                    <Border Classes="lens" Padding="16,8">
+                                        <local:CodeThemesView Name="CodeThemesSettings" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- TERMINAL: el mismo editor que la ventana de la flotante, integrado -->
+                                <StackPanel IsVisible="{Binding TerminalVisible}">
+                                    <TextBlock Classes="menuLabel" Text="BARRA DE ESTADO Y RESUMEN DEL PROMPT" Margin="2,0,0,8" />
+                                    <local:TerminalLayoutView Name="TerminalEditor" />
+                                </StackPanel>
+
+                                <!-- DATOS Y RETENCIÓN -->
+                                <Border IsVisible="{Binding DataVisible}">
+                                    <local:DataSettingsView Name="DataSettings" />
+                                </Border>
+
+                                <!-- SEGURIDAD: qué ficheros no puede leer Claude -->
+                                <Border IsVisible="{Binding SecurityConfigVisible}">
+                                    <local:DenyRulesView Name="DenyRules" />
+                                </Border>
+
+                                <!-- TABLEROS: las conexiones con los proveedores de tareas -->
+                                <Border IsVisible="{Binding BoardsConfigVisible}">
+                                    <local:BoardsSettingsView Name="BoardsConfig" />
+                                </Border>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- SEGURIDAD -->
+                    <Border IsVisible="{Binding SecurityVisible}" Margin="16,4,16,12">
+                        <local:SecurityView Name="SecurityPage" />
+                    </Border>
+
+                    <!-- VULNERABILIDADES: el informe de seguridad de arkko-stack -->
+                    <Border IsVisible="{Binding VulnerabilitiesVisible}" Margin="16,4,16,12">
+                        <local:VulnerabilitiesView Name="VulnerabilitiesPage" />
+                    </Border>
+
+                    <!-- TOKENS -->
+                    <Border IsVisible="{Binding TokensVisible}" Margin="16,4,16,12">
+                        <local:TokensView Name="TokensPage" />
+                    </Border>
+
+                    <!-- TAREAS -->
+                    <Border IsVisible="{Binding TasksVisible}" Margin="16,4,16,12">
+                        <local:TasksView Name="TasksPage" />
+                    </Border>
+
+                    <!-- WORKTREES -->
+                    <Border IsVisible="{Binding WorktreesVisible}" Margin="16,4,16,12">
+                        <local:WorktreesView Name="WorktreesPage" />
+                    </Border>
+
+                    <!-- ARTIFACTS -->
+                    <Border IsVisible="{Binding ArtifactsVisible}" Margin="16,4,16,12">
+                        <local:ArtifactsView Name="ArtifactsPage" />
+                    </Border>
+
+                    <!-- DIARIO -->
+                    <Border IsVisible="{Binding DiaryVisible}" Margin="16,4,16,12">
+                        <local:DiaryView Name="DiaryPage" />
+                    </Border>
+
+                    <!-- SESIONES: la página web pone sus propios márgenes -->
+                    <Border IsVisible="{Binding SessionsVisible}">
+                        <local:SessionsView Name="SessionsPage" />
+                    </Border>
+
+                    <!-- RELOJES: la página web pone sus propios márgenes -->
+                    <Border IsVisible="{Binding ClocksVisible}">
+                        <local:ClocksView Name="ClocksPage" />
+                    </Border>
+                </Grid>
+            </DockPanel>
+        </Grid>
+        <!-- Mientras se ve una imagen de Sesiones a pantalla completa, oscurece el resto de la ventana: la página no llega más allá de su sitio -->
+        <Border Name="Dim" Background="#C7000000" IsVisible="False" />
+        <!-- Líneas de barrido del diseño de terminal, encima de todo; en los demás, transparentes -->
+        <Border Background="{DynamicResource Scanlines}" IsHitTestVisible="False" />
+    </Grid>
+</Window>

@@ -1,0 +1,36 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Arkko.Desktop.SessionsView">
+    <!-- SESIONES: la vista entera es una página web local, la misma que la de la ventana de WPF; aquí solo se aloja y se le pasan los datos -->
+    <!-- El navegador lo pone el código al cargar la página, como primer hijo, y lo quita al descargarla: escondido
+         hasta que la página avisa de que está lista, porque mientras arranca su ventana se ve vacía -->
+    <Grid Name="Host">
+        <!-- Mientras tanto, un aro que gira y su texto, con un fundido para no parpadear si la página está enseguida -->
+        <StackPanel Name="Loading" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+            <StackPanel.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Delay="0:0:0.15" Duration="0:0:0.3" />
+                </Transitions>
+            </StackPanel.Transitions>
+            <Grid Name="Spinner" Classes="spinning" Width="34" Height="34" HorizontalAlignment="Center">
+                <Ellipse Stroke="{DynamicResource TrackEdge}" StrokeThickness="3" />
+                <Path Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeLineCap="Round" Data="M 17,1.5 A 15.5,15.5 0 0 1 32.5,17" />
+            </Grid>
+            <TextBlock Text="Cargando sesiones…" Margin="0,14,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+        </StackPanel>
+        <TextBlock Name="Failure" IsVisible="False" TextWrapping="Wrap" MaxWidth="520" Margin="24"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+    </Grid>
+
+    <UserControl.Styles>
+        <!-- El aro solo gira mientras se ve: una animación sin fin mantendría la ventana repintándose para nada -->
+        <Style Selector="Grid.spinning">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

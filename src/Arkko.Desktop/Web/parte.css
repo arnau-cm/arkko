@@ -1,0 +1,62 @@
+/* PARTE: EL TRABAJO CONTADO POR FASES */
+
+/* La página: el papel de Ahora, pero larga y con su scroll, prompt a prompt */
+.ah-view.pt-view { display: block; height: auto; min-height: 100%; overflow: visible; padding-top: 18px; }
+.pt-empty { margin: 0; color: var(--fg-muted); }
+
+/* El conmutador de arriba a la derecha: el resumen o cada paso, que es la Secuencia. Va en su franja, encima de la página
+   (que empieza debajo), y en la esquina de lo que deja libre la ficha, como la rama del directo (wfPlaceOverlays) */
+.parte-mode { position: absolute; top: 9px; right: 14px; transition: right 0.2s ease, top 0.2s ease; z-index: 7; display: inline-flex; padding: 2px; background: var(--tip); border: 1px solid var(--track-edge); border-radius: 9px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+.parte-mode[hidden] { display: none; }
+.parte-mode button { padding: 3px 12px; font: 600 12.5px var(--ui-font); color: var(--fg-muted); background: none; border: 0; border-radius: 7px; cursor: pointer; }
+.parte-mode button:hover { color: var(--fg); }
+.parte-mode button.on { color: var(--fg); background: var(--button-hover); }
+
+/* Cada prompt, una lámina: su cabecera se pulsa para abrirlo o recogerlo; recogido, dice en corto lo que hubo. Abierto,
+   la cabecera se queda arriba mientras se lee lo suyo, para saber siempre en qué prompt se está */
+.pt-prompt { margin-bottom: 22px; }
+.pt-prompt-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 14px; cursor: pointer; }
+.pt-prompt.open .pt-prompt-head { position: sticky; top: 0; z-index: 3; background: var(--tip); box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.45); }
+.pt-prompt.open .pt-prompt-head { border-bottom: 1px solid var(--ah-line); }
+.pt-prompt-head:hover { background: color-mix(in srgb, var(--fg) 4%, var(--tip)); }
+.pt-prompt-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; }
+.pt-prompt-text { min-width: 0; overflow: hidden; font-size: 14px; font-weight: 700; color: var(--fg); white-space: nowrap; text-overflow: ellipsis; flex: 0 1 auto; }
+.pt-prompt-text.shell { font: 700 13px var(--mono); }
+.pt-prompt-text code { padding: 0 3px; font: 12px var(--mono); background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 3px; }
+.pt-prompt-num { flex: none; font: 600 12px var(--mono); color: var(--fg-faint); }
+.pt-prompt-sum { flex-basis: 100%; font-size: 12px; color: var(--fg-faint); }
+.pt-caret { font-size: 11px; color: var(--fg-faint); }
+.pt-body { padding: 10px 14px 14px; }
+
+/* Las fases: una estación grande con su nombre y lo que duró; sus rachas, debajo, en el hilo */
+.pt-phase { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-top: 8px; padding: 8px 10px 2px; }
+.pt-phase:first-child { margin-top: 0; }
+.pt-phase .ah-chip { width: 32px; height: 32px; }
+.pt-phase-words { display: flex; align-items: baseline; gap: 10px; }
+.pt-phase-name { font-size: 15px; font-weight: 700; color: var(--fg); }
+.pt-phase-took { font-size: 12px; color: var(--fg-faint); }
+.pt-phase.on .pt-phase-name { color: var(--danger); }
+.pt-log .ah-item { margin-left: 18px; }
+
+/* Los pasos de una racha: un botón junto a su frase, y abiertos, una fila por paso con la hora, la herramienta, sobre qué
+   y lo que tardó */
+.pt-steps-btn { margin-left: auto; padding: 0 9px; height: 21px; font: 600 11px var(--ui-font); color: var(--fg-muted); background: var(--tip); border: 1px solid var(--ah-line); border-radius: 999px; cursor: pointer; }
+.pt-steps-btn:hover { color: var(--fg); border-color: var(--fg-faint); }
+.pt-steps { margin-top: 6px; padding: 2px 0; border-left: 1px dashed var(--ah-ink); }
+.pt-step { display: grid; grid-template-columns: 64px 96px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: 3px 10px; font: 11.5px/1.45 var(--mono); color: var(--fg-muted); border-radius: 4px; }
+.pt-step:hover { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.pt-step.picked { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.pt-step.error .pt-step-tool { color: var(--danger); }
+.pt-step-when, .pt-step-took { color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.pt-step-tool { font-weight: 700; color: var(--fg); }
+.pt-step-what { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Lo de un agente: una lámina de rayas de su color bajo su lanzamiento; terminado, recogida; abierta, sus fases dentro */
+.pt-agent { margin: 2px 0 10px 64px; background: color-mix(in srgb, var(--actor) 6%, var(--tip)); border: 1.5px dashed color-mix(in srgb, var(--actor) 55%, transparent); border-radius: 10px; }
+.pt-agent-head { display: flex; align-items: center; gap: 10px; padding: 7px 12px; cursor: pointer; }
+.pt-agent-head:hover { background: color-mix(in srgb, var(--actor) 8%, transparent); border-radius: 9px; }
+.pt-agent-sum { min-width: 0; overflow: hidden; font-size: 12.5px; color: var(--fg-muted); white-space: nowrap; text-overflow: ellipsis; }
+.pt-agent-head .ah-when { margin-left: auto; }
+.pt-agent-body { padding: 0 8px 8px; }
+.pt-agent .pt-log .ah-item { margin-left: 4px; }
+.pt-agent .pt-agent { margin-left: 40px; }

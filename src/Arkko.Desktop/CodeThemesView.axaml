@@ -1,0 +1,80 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.CodeThemesView"
+             x:DataType="local:CodeThemesModel">
+    <UserControl.Resources>
+        <!-- La muestra de un tema: su fondo con una raya de cada color principal, como en el menú de la página -->
+        <DataTemplate x:Key="Sample" x:DataType="local:CodeSampleLook">
+            <Border Background="{Binding Background}" BorderBrush="{Binding Edge}" BorderThickness="1" CornerRadius="5" Padding="5,4" VerticalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding Colors}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="3" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="IBrush">
+                            <Border Width="5" Height="12" CornerRadius="2" Background="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </DataTemplate>
+
+        <!-- Un lenguaje: su nombre y sus extensiones; a la derecha, su tema con su muestra, que abre el menú de temas -->
+        <DataTemplate x:Key="LanguageRow" x:DataType="local:CodeLanguageRow">
+            <DockPanel Margin="0,5">
+                <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="Theme_Click" VerticalAlignment="Center" MinWidth="230"
+                        HorizontalContentAlignment="Stretch" Padding="8,5,12,5">
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Left" Content="{Binding Sample}" ContentTemplate="{StaticResource Sample}" Margin="0,0,10,0" />
+                        <TextBlock DockPanel.Dock="Right" Text="▾" Margin="10,0,0,0" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ThemeName}" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Button>
+                <StackPanel Margin="0,0,16,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,8">
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Content="Restablecer" Click="Reset_Click"
+                    IsEnabled="{Binding CanReset}" VerticalAlignment="Top" />
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Classes="settingName" Text="Temas del código" />
+                <TextBlock Classes="settingHint" TextWrapping="Wrap"
+                           Text="Con qué colores se ve el código de cada lenguaje en Sesiones: en los cambios de la rama, en la revisión y en lo que lee o edita el agente. «Como la app» sigue su diseño, oscuro o claro; «Restablecer» deshace lo elegido. También se cambia desde el propio código, pulsando el nombre del lenguaje en su cabecera, y el cambio se ve al momento." />
+            </StackPanel>
+        </DockPanel>
+        <ItemsControl ItemsSource="{Binding Languages}" ItemTemplate="{StaticResource LanguageRow}" Margin="0,10,0,0" />
+
+        <!-- MENÚ DE TEMAS: cuelga del botón del lenguaje y se cierra al elegir o al pulsar fuera -->
+        <Popup Name="ThemePopup" Placement="BottomEdgeAlignedRight" VerticalOffset="6" IsLightDismissEnabled="True">
+            <Border Padding="6" MinWidth="270" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}"
+                    BorderThickness="1" BoxShadow="0 3 14 0 #38000000" Margin="0,0,10,10">
+                <StackPanel>
+                    <TextBlock Text="{Binding MenuTitle}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource FgMuted}" Margin="8,4,8,6" />
+                    <ItemsControl ItemsSource="{Binding Options}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:CodeThemeOption">
+                                <RadioButton Theme="{StaticResource MenuChoice}" GroupName="CodeTheme" IsChecked="{Binding IsCurrent, Mode=OneWay}" Click="Option_Click">
+                                    <DockPanel Margin="2,2">
+                                        <ContentControl DockPanel.Dock="Left" Content="{Binding Sample}" ContentTemplate="{StaticResource Sample}" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding MenuHint}" FontSize="11" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap" MaxWidth="260"
+                               Margin="8,6,8,2" IsVisible="{Binding MenuHintVisible}" />
+                </StackPanel>
+            </Border>
+        </Popup>
+    </StackPanel>
+</UserControl>

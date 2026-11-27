@@ -1,0 +1,44 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
+        xmlns:local="using:Arkko.Desktop"
+        x:Class="Arkko.Desktop.CorkWindow"
+        Title="Corcho · Arkko" Icon="{DynamicResource AppWindowIcon}"
+        Width="1500" Height="920" MinWidth="520" MinHeight="360"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="BorderOnly" ExtendClientAreaToDecorationsHint="True" ExtendClientAreaTitleBarHeightHint="52"
+        Background="{DynamicResource GlassBase}">
+    <!-- CORCHO: una ventana que se divide en recuadros, y en cada uno, uno o varios paneles de Sesiones en pestañas. La
+         barra es la del panel; debajo, la superficie donde la ventana coloca cada recuadro -->
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" Height="52" Background="Transparent" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+            <!-- El corcho, una tecla como la del logo con la chincheta y su nombre, que se cambia con doble clic o con el
+                 clic derecho; detrás, una tecla por sesión clavada, con su color, su estado y cuántos paneles tiene -->
+            <StackPanel Name="BarLeft" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,140,0" Spacing="8"
+                        ClipToBounds="True" chrome:WindowDecorationProperties.ElementRole="User">
+                <Border Name="NameKey" Height="38" Padding="11,0,13,3" CornerRadius="9" BorderThickness="1"
+                        Background="#2C2C31" BorderBrush="#34343A" BoxShadow="inset 0 -3 0 0 #1B1B1E">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <ContentControl Name="PinMark" VerticalAlignment="Center" />
+                        <TextBlock Name="NameText" FontSize="13" FontWeight="Bold" Foreground="#E6E3DC" VerticalAlignment="Center"
+                                   Background="Transparent" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                        <TextBox Name="NameBox" IsVisible="False" FontSize="12.5" MinWidth="160" MaxWidth="260" Padding="6,2" VerticalAlignment="Center"
+                                 VerticalContentAlignment="Center" />
+                    </StackPanel>
+                </Border>
+                <Border Name="BarSplit" Width="1" Height="20" Margin="2,0" Background="{DynamicResource TrackEdge}" VerticalAlignment="Center" />
+                <StackPanel Name="Chips" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                            chrome:WindowDecorationProperties.ElementRole="User" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"
+                        chrome:WindowDecorationProperties.ElementRole="User">
+                <Button Theme="{StaticResource BarButton}" Click="Minimize_Click" ToolTip.Tip="Minimizar" Content="&#xE921;" />
+                <Button Name="MaximizeButton" Theme="{StaticResource BarButton}" Click="Maximize_Click" ToolTip.Tip="Maximizar" Content="&#xE922;" />
+                <Button Theme="{StaticResource CloseButton}" Click="Close_Click" ToolTip.Tip="Cerrar" Content="&#xE8BB;" />
+            </StackPanel>
+        </Grid>
+        <Grid Margin="8,0,8,8">
+            <local:CorkBoard Name="Board" />
+        </Grid>
+    </DockPanel>
+</Window>

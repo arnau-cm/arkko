@@ -1,0 +1,956 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.TasksView"
+             x:DataType="local:TasksModel">
+    <UserControl.Resources>
+        <!-- FICHA DEL PIE DE SESIONES: las abiertas con su estado, lo gastado y cuándo; igual con todas cerradas -->
+        <DataTemplate x:Key="CardSessionsTip" x:DataType="local:TaskCardModel">
+            <StackPanel MinWidth="230" MaxWidth="320">
+                <TextBlock Text="{Binding TipTitle}" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding TipOpen}" IsVisible="{Binding TipOpenVisible}" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:TipSession">
+                            <DockPanel Margin="0,0,0,6">
+                                <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Top" Margin="0,5,9,0" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Since}" Foreground="{DynamicResource FgFaint}" FontSize="11"
+                                           VerticalAlignment="Top" Margin="10,1,0,0" TextWrapping="NoWrap" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    <TextBlock Classes="ownColor" Text="{Binding Status}" Foreground="{Binding Brush}" FontSize="11" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid Margin="0,8,0,0" ColumnDefinitions="*,*,*" IsVisible="{Binding TipStatsVisible}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding UsagePrompts}" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="PROMPTS" Foreground="{DynamicResource FgFaint}" FontSize="10" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding UsageTokens}" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="TOKENS" Foreground="{DynamicResource FgFaint}" FontSize="10" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{Binding UsageTime}" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="TIEMPO" Foreground="{DynamicResource FgFaint}" FontSize="10" />
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{Binding TipNote}" IsVisible="{Binding TipNoteVisible}" Foreground="{DynamicResource FgMuted}" FontSize="11" Margin="0,8,0,0"
+                           TextWrapping="Wrap" />
+                <TextBlock Text="{Binding TipWhen}" IsVisible="{Binding TipWhenVisible}" Foreground="{DynamicResource FgMuted}" FontSize="11" Margin="0,4,0,0" />
+                <Border BorderBrush="{DynamicResource TipEdge}" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,8,0,0">
+                    <TextBlock Text="Clic en la tarjeta para ver sus sesiones" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- FICHA DE LA PR DE UNA TARJETA: la PR, su worktree, lo que tiene sin subir y, si sobra, que ya se puede cerrar -->
+        <DataTemplate x:Key="CardPrTip" x:DataType="local:TaskCardModel">
+            <StackPanel MinWidth="230" MaxWidth="320">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{x:Static local:GlyphShapes.PullRequest}" Stroke="{Binding PrBrush}" StrokeThickness="1.4" Width="12" Height="12"
+                          Stretch="Uniform" VerticalAlignment="Center" Margin="0,1,7,0" />
+                    <TextBlock Classes="ownColor" Text="{Binding PrText}" Foreground="{Binding PrBrush}" FontWeight="SemiBold" />
+                </StackPanel>
+                <TextBlock Text="{Binding TreeFolder}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,8,0,0" />
+                <TextBlock Classes="ownColor" Text="{Binding TreeLocal}" Foreground="{Binding TreeLocalBrush}" FontSize="11" Margin="0,2,0,0" />
+                <TextBlock Text="{Binding CloseReason}" IsVisible="{Binding CloseVisible}" Foreground="{DynamicResource DataFiveHour}" FontSize="11"
+                           TextWrapping="Wrap" Margin="0,8,0,0" />
+                <Border BorderBrush="{DynamicResource TipEdge}" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,8,0,0">
+                    <TextBlock Text="Clic en la tarjeta para ver la rama y cómo cerrarla" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Etiqueta de una tarea: pastilla con borde y texto en su color -->
+        <DataTemplate x:Key="TaskLabel" x:DataType="local:LabelChip">
+            <Border CornerRadius="6" Padding="7,1,7,2" Margin="0,0,5,5" Background="{Binding Fill}" BorderBrush="{Binding Edge}" BorderThickness="1">
+                <TextBlock Classes="ownColor" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding Brush}" />
+            </Border>
+        </DataTemplate>
+
+        <!-- Acción de una tarjeta (traer, mandar al backlog, quitar): icono discreto que se enciende con el ratón -->
+        <ControlTheme x:Key="CardAction" TargetType="Button">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border Name="B" CornerRadius="6" Background="Transparent">
+                        <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            </Style>
+            <Style Selector="^:pointerover /template/ Border#B">
+                <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+            </Style>
+        </ControlTheme>
+
+        <!-- Tarjeta de una tarea: el título; sus etiquetas; tipo, prioridad, clave, estimación y quién la lleva;
+             y, si tiene sesiones, un pie con su estado y lo que han gastado. Con el proyecto entero a la vista,
+             una franja a la izquierda en el color de su subtablero -->
+        <DataTemplate x:Key="TaskCard" x:DataType="local:TaskCardModel">
+            <Panel Margin="0,0,0,10">
+                <!-- Sombra: tres bordes oscuros, cada vez más anchos y más tenues, un poco por debajo -->
+                <Panel IsHitTestVisible="False">
+                    <Border Margin="-2,0,-2,-5" CornerRadius="13" Background="Black" Opacity="0.035" />
+                    <Border Margin="-1,0,-1,-3" CornerRadius="12" Background="Black" Opacity="0.05" />
+                    <Border Margin="0,1,0,-1" CornerRadius="11" Background="Black" Opacity="0.07" />
+                </Panel>
+                <Border Classes="card" Classes.selected="{Binding IsSelected}" Classes.checked="{Binding IsChecked}" PointerReleased="Card_Click">
+                    <Grid ColumnDefinitions="Auto,*" MinHeight="{Binding StripeMinHeight}">
+                        <!-- Franja del subtablero, con su nombre en vertical; la tarjeta crece si el nombre no cabe -->
+                        <Border Width="{Binding StripeWidth}" CornerRadius="9,0,0,9" Background="{Binding StripeBrush}" IsVisible="{Binding StripeVisible}"
+                                ToolTip.Tip="{Binding BoardName}" ClipToBounds="True">
+                            <LayoutTransformControl LayoutTransform="rotate(-90deg)" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    IsVisible="{Binding StripeTextVisible}">
+                                <TextBlock Classes="ownColor" Text="{Binding BoardName}" FontSize="9" FontWeight="Bold" Foreground="{Binding StripeForeground}" />
+                            </LayoutTransformControl>
+                        </Border>
+                        <StackPanel Grid.Column="1">
+                            <Grid Margin="14,12,14,12">
+                                <StackPanel>
+                                    <TextBlock Classes="ownColor" Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis" LineHeight="19" MaxLines="3" Margin="0,0,44,0" />
+                                    <TextBlock Text="{Binding Untranslated}" Foreground="{DynamicResource DataFiveHour}" FontSize="11" Margin="0,4,0,0"
+                                               IsVisible="{Binding UntranslatedVisible}" />
+                                    <ItemsControl ItemsSource="{Binding Labels}" ItemTemplate="{StaticResource TaskLabel}" Margin="0,9,0,-5"
+                                                  IsVisible="{Binding LabelsVisible}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                    <DockPanel Margin="0,11,0,0">
+                                        <Border DockPanel.Dock="Right" Width="22" Height="22" CornerRadius="11" Background="{Binding AvatarFill}"
+                                                IsVisible="{Binding InitialsVisible}" ToolTip.Tip="{Binding Assignee}">
+                                            <TextBlock Classes="ownColor" Text="{Binding Initials}" FontSize="9" FontWeight="Bold" Foreground="White"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="20" Height="20" CornerRadius="5" Background="{Binding TypeFill}" BorderBrush="{Binding TypeEdge}"
+                                                    BorderThickness="1" ToolTip.Tip="{Binding TypeTip}">
+                                                <TextBlock Text="{Binding TypeGlyph}" Classes="icon" FontSize="10" Foreground="{Binding TypeBrush}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <!-- Prioridad en barras de señal, de una a tres -->
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="9,0,0,0" ToolTip.Tip="{Binding PriorityTip}"
+                                                        IsVisible="{Binding PriorityVisible}">
+                                                <Rectangle Width="3" Height="5" RadiusX="1" RadiusY="1" Fill="{Binding Bar1}" VerticalAlignment="Bottom" Margin="0,0,1.5,0" />
+                                                <Rectangle Width="3" Height="8" RadiusX="1" RadiusY="1" Fill="{Binding Bar2}" VerticalAlignment="Bottom" Margin="0,0,1.5,0" />
+                                                <Rectangle Width="3" Height="11" RadiusX="1" RadiusY="1" Fill="{Binding Bar3}" VerticalAlignment="Bottom" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource FgLabel}"
+                                                       VerticalAlignment="Center" Margin="9,0,0,0" />
+                                            <StackPanel Orientation="Horizontal" Margin="10,0,0,0" IsVisible="{Binding EstimateVisible}" ToolTip.Tip="Estimación">
+                                                <TextBlock Text="&#xE823;" Classes="icon" FontSize="10" Foreground="{DynamicResource FgFaint}"
+                                                           VerticalAlignment="Center" Margin="0,1,4,0" />
+                                                <TextBlock Text="{Binding Estimate}" FontSize="11" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <Border CornerRadius="6" Padding="6,1,7,2" Margin="10,0,0,0" Background="{Binding BoardTint}" VerticalAlignment="Center"
+                                                    IsVisible="{Binding BoardChipVisible}" ToolTip.Tip="Subtablero">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                                    <TextBlock Classes="ownColor" Text="{Binding BoardName}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource FgLabel}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- PR de su rama: azul abierta, morada mergeada -->
+                                            <Border CornerRadius="6" Padding="5,1,7,2" Margin="10,0,0,0" Background="{Binding PrFill}" VerticalAlignment="Center"
+                                                    IsVisible="{Binding PrVisible}" ToolTip.ShowDelay="300">
+                                                <ToolTip.Tip>
+                                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CardPrTip}" />
+                                                </ToolTip.Tip>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Path Data="{x:Static local:GlyphShapes.PullRequest}" Stroke="{Binding PrBrush}" StrokeThickness="1.4" Width="10" Height="10"
+                                                          Stretch="Uniform" VerticalAlignment="Center" Margin="0,1,4,0" />
+                                                    <TextBlock Classes="ownColor" Text="{Binding PrNumber}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding PrBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-6,0">
+                                    <!-- Casilla para marcarla: con el ratón encima, o siempre que haya alguna marcada -->
+                                    <Border Classes="check" Classes.can="{Binding CanCheck}" Classes.always="{Binding Selecting}" PointerReleased="CheckBox_Click"
+                                            ToolTip.Tip="Marcar (también Ctrl+clic; Mayús+clic marca hasta aquí)">
+                                        <Border Classes="box">
+                                            <TextBlock Classes="icon tick" Text="&#xE73E;" />
+                                        </Border>
+                                    </Border>
+                                    <Button Theme="{StaticResource CardAction}" Content="{Binding SecondGlyph}" Click="CardSecond_Click" ToolTip.Tip="{Binding SecondTip}"
+                                            IsVisible="{Binding SecondVisible}" />
+                                    <Button Theme="{StaticResource CardAction}" Content="{Binding ActionGlyph}" Click="CardAction_Click" ToolTip.Tip="{Binding ActionTip}"
+                                            IsVisible="{Binding ActionVisible}" />
+                                </StackPanel>
+                            </Grid>
+                            <!-- Sus sesiones: a la izquierda el estado de la abierta que más pide atención, o cuántas ha tenido;
+                                 a la derecha lo que han gastado. Con una abierta, teñido de su color -->
+                            <Border BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="0,1,0,0" Background="{Binding FooterFill}" CornerRadius="0,0,9,9"
+                                    Padding="14,7,14,8" IsVisible="{Binding StripVisible}" ToolTip.ShowDelay="300">
+                                <ToolTip.Tip>
+                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CardSessionsTip}" />
+                                </ToolTip.Tip>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding FooterRight}" Foreground="{DynamicResource FgMuted}" FontSize="11"
+                                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" Fill="{Binding LiveBrush}" VerticalAlignment="Center" Margin="0,1,7,0"
+                                                 IsVisible="{Binding LiveVisible}" />
+                                        <TextBlock Text="&#xE756;" Classes="icon" FontSize="10" Foreground="{DynamicResource FgFaint}"
+                                                   VerticalAlignment="Center" Margin="0,1,6,0" IsVisible="{Binding PastVisible}" />
+                                        <TextBlock Classes="ownColor" Text="{Binding FooterLeft}" Foreground="{Binding FooterForeground}" FontSize="11" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Panel>
+        </DataTemplate>
+
+        <!-- Tarjeta de una tarea hecha: más baja y en segundo plano; el título y, debajo, la marca de hecha,
+             su clave y lo que costó; la × la quita de la vista -->
+        <DataTemplate x:Key="TaskDoneCard" x:DataType="local:TaskCardModel">
+            <Panel Margin="0,0,0,8">
+                <Panel IsHitTestVisible="False" Opacity="0.6">
+                    <Border Margin="-2,0,-2,-5" CornerRadius="13" Background="Black" Opacity="0.035" />
+                    <Border Margin="-1,0,-1,-3" CornerRadius="12" Background="Black" Opacity="0.05" />
+                    <Border Margin="0,1,0,-1" CornerRadius="11" Background="Black" Opacity="0.07" />
+                </Panel>
+                <Border Classes="card done" Classes.selected="{Binding IsSelected}" Classes.checked="{Binding IsChecked}" PointerReleased="Card_Click">
+                    <Grid ColumnDefinitions="Auto,*" MinHeight="{Binding StripeMinHeight}">
+                        <Border Width="{Binding StripeWidth}" CornerRadius="9,0,0,9" Background="{Binding StripeBrush}" IsVisible="{Binding StripeVisible}"
+                                ToolTip.Tip="{Binding BoardName}" ClipToBounds="True">
+                            <LayoutTransformControl LayoutTransform="rotate(-90deg)" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    IsVisible="{Binding StripeTextVisible}">
+                                <TextBlock Classes="ownColor" Text="{Binding BoardName}" FontSize="9" FontWeight="Bold" Foreground="{Binding StripeForeground}" />
+                            </LayoutTransformControl>
+                        </Border>
+                        <StackPanel Grid.Column="1">
+                            <Grid Margin="14,10,14,10">
+                                <StackPanel>
+                                    <TextBlock Classes="doneTitle" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis" LineHeight="17" MaxLines="2" Margin="0,0,44,0" />
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,7,0,0">
+                                        <TextBlock Text="{Binding ClosedGlyph}" Classes="icon" FontSize="11" Foreground="{Binding ClosedBrush}"
+                                                   VerticalAlignment="Center" Margin="0,1,7,0" />
+                                        <TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource FgFaint}"
+                                                   VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Estimate}" FontSize="11" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-6,0">
+                                    <Border Classes="check" Classes.can="{Binding CanCheck}" Classes.always="{Binding Selecting}" PointerReleased="CheckBox_Click"
+                                            ToolTip.Tip="Marcar (también Ctrl+clic; Mayús+clic marca hasta aquí)">
+                                        <Border Classes="box">
+                                            <TextBlock Classes="icon tick" Text="&#xE73E;" />
+                                        </Border>
+                                    </Border>
+                                    <Button Theme="{StaticResource CardAction}" Content="{Binding ActionGlyph}" Click="CardAction_Click" ToolTip.Tip="{Binding ActionTip}"
+                                            IsVisible="{Binding ActionVisible}" />
+                                </StackPanel>
+                            </Grid>
+                            <!-- Sus sesiones, como en las demás tarjetas: lo que costó se ve -->
+                            <Border BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="0,1,0,0" Background="{Binding FooterFill}" CornerRadius="0,0,9,9"
+                                    Padding="14,6,14,7" IsVisible="{Binding StripVisible}" ToolTip.ShowDelay="300">
+                                <ToolTip.Tip>
+                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CardSessionsTip}" />
+                                </ToolTip.Tip>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding FooterRight}" Foreground="{DynamicResource Fg}" FontSize="11"
+                                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" Fill="{Binding LiveBrush}" VerticalAlignment="Center" Margin="0,1,7,0"
+                                                 IsVisible="{Binding LiveVisible}" />
+                                        <TextBlock Text="&#xE756;" Classes="icon" FontSize="10" Foreground="{DynamicResource FgMuted}"
+                                                   VerticalAlignment="Center" Margin="0,1,6,0" IsVisible="{Binding PastVisible}" />
+                                        <TextBlock Classes="ownColor" Text="{Binding FooterLeft}" Foreground="{DynamicResource Fg}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Panel>
+        </DataTemplate>
+
+        <!-- La de hechas y descartadas, en tarjetas compactas; las demás, en las normales -->
+        <local:CardTemplates x:Key="Cards" Open="{StaticResource TaskCard}" Closed="{StaticResource TaskDoneCard}" />
+
+        <!-- Una columna del tablero: carril con su nombre y recuento arriba y sus tarjetas con su propio scroll.
+             Plegada a mano o vacía, es una franja con el nombre en vertical. -->
+        <DataTemplate x:Key="TaskColumn" x:DataType="local:TaskColumnModel">
+            <Panel Margin="0,0,10,0">
+                <Border Background="{DynamicResource TaskLane}" CornerRadius="{DynamicResource RadiusM}" Padding="0,12"
+                        IsVisible="{Binding IsFolded}" ToolTip.Tip="{Binding FoldedTip}" Cursor="{Binding FoldedCursor}" PointerReleased="Folded_Click">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Fill="{Binding Dot}" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                        <LayoutTransformControl LayoutTransform="rotate(90deg)" HorizontalAlignment="Center">
+                            <TextBlock Classes="ownColor" Text="{Binding FoldedText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource FgMuted}" />
+                        </LayoutTransformControl>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource TaskLane}" CornerRadius="{DynamicResource RadiusM}" Padding="8,10,4,4" IsVisible="{Binding !IsFolded}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="6,0,2,10" MinHeight="24" IsVisible="{Binding HeaderVisible}">
+                            <Button DockPanel.Dock="Right" Theme="{StaticResource CardAction}" Content="&#xE76B;" Click="Fold_Click" ToolTip.Tip="Plegar la columna"
+                                    VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{Binding Dot}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                                <TextBlock Classes="ownColor" Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                                <Border CornerRadius="9" Padding="7,0,7,1" Margin="8,0,0,0" Background="{DynamicResource TrackFill}" VerticalAlignment="Center">
+                                    <TextBlock Classes="ownColor" Text="{Binding Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource FgMuted}" />
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="{Binding EmptyText}" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap"
+                                   Margin="6,0,8,0" IsVisible="{Binding EmptyVisible}" />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Loaded="LaneScroll_Loaded" ScrollChanged="LaneScroll_ScrollChanged">
+                            <ItemsControl ItemsSource="{Binding Cards}" ItemTemplate="{StaticResource Cards}" Margin="0,0,4,0" />
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Panel>
+        </DataTemplate>
+
+        <!-- Cabecera de una columna en la vista de carriles: los nombres van arriba una sola vez; plegada, solo su punto -->
+        <DataTemplate x:Key="TaskColumnHead" x:DataType="local:TaskColumnModel">
+            <Border Margin="0,0,10,0" Background="{DynamicResource TaskLane}" CornerRadius="{DynamicResource RadiusS}" Padding="8,6,2,6"
+                    ToolTip.Tip="{Binding FoldedTip}">
+                <Panel>
+                    <Border Background="Transparent" Cursor="{Binding FoldedCursor}" PointerReleased="Folded_Click" IsVisible="{Binding IsFolded}">
+                        <Ellipse Width="8" Height="8" Fill="{Binding Dot}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <DockPanel MinHeight="24" IsVisible="{Binding !IsFolded}">
+                        <Button DockPanel.Dock="Right" Theme="{StaticResource CardAction}" Content="&#xE76B;" Click="Fold_Click" ToolTip.Tip="Plegar la columna"
+                                VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="{Binding Dot}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                            <TextBlock Classes="ownColor" Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                            <Border CornerRadius="9" Padding="7,0,7,1" Margin="8,0,0,0" Background="{DynamicResource TrackFill}" VerticalAlignment="Center">
+                                <TextBlock Classes="ownColor" Text="{Binding Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource FgMuted}" />
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+                </Panel>
+            </Border>
+        </DataTemplate>
+
+        <!-- El carril de un subtablero: su cabecera en su color, que lo pliega, y debajo sus columnas -->
+        <DataTemplate x:Key="Swimlane" x:DataType="local:SwimlaneModel">
+            <StackPanel Margin="0,0,0,14">
+                <Border CornerRadius="{DynamicResource RadiusS}" Padding="12,7" Background="{Binding Tint}" BorderBrush="{Binding Brush}"
+                        BorderThickness="4,0,0,0" Cursor="Hand" PointerReleased="LaneFold_Click" ToolTip.Tip="Plegar o desplegar este subtablero" Margin="0,0,10,0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Glyph}" Classes="icon" FontSize="9" Foreground="{DynamicResource FgMuted}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" FontSize="11" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center"
+                                   Margin="0,0,12,0" />
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="9" Height="9" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                            <TextBlock Classes="ownColor" Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <ItemsControl ItemsSource="{Binding Columns}" ItemTemplate="{StaticResource TaskColumn}" Margin="0,8,0,0" IsVisible="{Binding BodyVisible}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <local:LanePanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- El aro de carga solo gira mientras se ve: una animación sin fin mantendría la ventana repintándose para nada -->
+        <Style Selector="Grid.spinning">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <!-- TARJETA: al pasar, borde más marcado; elegida, del acento; marcada, del color de la marca y teñida -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource TaskCardFill}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardEdge}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.card:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardHoverEdge}" />
+        </Style>
+        <Style Selector="Border.card.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+        <Style Selector="Border.card.checked">
+            <Setter Property="BorderBrush" Value="{ReflectionBinding CheckBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{ReflectionBinding CheckTint}" />
+        </Style>
+        <Style Selector="TextBlock.doneTitle">
+            <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+        </Style>
+        <Style Selector="Border.card:pointerover TextBlock.doneTitle, Border.card.selected TextBlock.doneTitle">
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        </Style>
+
+        <!-- CASILLA DE MARCAR: solo si se puede marcar, y con el ratón encima o con alguna ya marcada -->
+        <Style Selector="Border.check">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Border.card:pointerover Border.check.can, Border.check.can.always">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="Border.box">
+            <Setter Property="Width" Value="15" />
+            <Setter Property="Height" Value="15" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThumbHover}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.tick">
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="Border.checked Border.box">
+            <Setter Property="Background" Value="{ReflectionBinding CheckBrush}" />
+            <Setter Property="BorderBrush" Value="{ReflectionBinding CheckBrush}" />
+        </Style>
+        <Style Selector="Border.checked TextBlock.tick">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+
+        <!-- FILA DEL DESPLEGABLE DE ETIQUETAS: fondo al pasar; elegida, casilla llena -->
+        <Style Selector="Border.labelRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+        </Style>
+        <Style Selector="Border.labelRow Border.box">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThumbFill}" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+        <Style Selector="Border.labelRow.on Border.box">
+            <Setter Property="Background" Value="{DynamicResource ChipOnEdge}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ChipOnEdge}" />
+        </Style>
+        <Style Selector="Border.labelRow.on TextBlock.tick">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+
+        <!-- FILA DE SESIÓN DEL DETALLE: borde al pasar -->
+        <Style Selector="Border.sessionRow:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardHoverEdge}" />
+        </Style>
+
+        <!-- Bloque del detalle: fondo propio para separar datos, sesiones y descripción -->
+        <Style Selector="Border.detailSection">
+            <Setter Property="Background" Value="{DynamicResource TaskSection}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusS}" />
+            <Setter Property="Padding" Value="14,10,14,12" />
+            <Setter Property="Margin" Value="14,0,14,10" />
+        </Style>
+
+        <!-- Cabecera de la tabla del historial -->
+        <Style Selector="Grid.historyHead TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource FgFaint}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- BARRA: el tablero y sus subtableros, los filtros y la búsqueda; a la derecha, cuándo se leyó -->
+        <DockPanel Margin="0,0,0,14" IsVisible="{Binding BoardVisible}">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding UpdatedText}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Theme="{StaticResource ChipButton}" Click="Refresh_Click" IsEnabled="{Binding CanRefresh}" ToolTip.Tip="Volver a leer el tablero">
+                    <TextBlock Text="&#xE72C;" Classes="icon" FontSize="11" Margin="0,2" />
+                </Button>
+            </StackPanel>
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Theme="{StaticResource ChipButton}" Click="Board_Click" ToolTip.Tip="Elegir otro tablero" Foreground="{DynamicResource Fg}" Margin="0,2,8,2">
+                    <StackPanel Orientation="Horizontal" Margin="0,1">
+                        <Ellipse Width="9" Height="9" Fill="{Binding BoardBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding BoardLabel}" FontSize="13" FontWeight="SemiBold" />
+                        <TextBlock Text="&#xE70D;" Classes="icon" FontSize="9" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="10,2,0,0" />
+                    </StackPanel>
+                </Button>
+                <!-- Subtableros del proyecto, cada uno en el color de la franja de sus tarjetas: «Todos», o los que se marquen -->
+                <ItemsControl ItemsSource="{Binding SubBoards}" IsVisible="{Binding SubBoardsVisible}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:SubBoardChip">
+                            <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding IsOn, Mode=OneWay}" Click="SubBoard_Click" Margin="0,2,6,2"
+                                          ToolTip.Tip="{Binding Tip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,1,7,0" IsVisible="{Binding DotVisible}" />
+                                    <TextBlock Text="{Binding Name}" />
+                                </StackPanel>
+                            </ToggleButton>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Rectangle Width="1" Height="20" Fill="{DynamicResource TrackEdge}" Margin="8,0,16,0" VerticalAlignment="Center" />
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding HistoryMode}" Margin="0,2,8,2"
+                              ToolTip.Tip="Las hechas y descartadas que has quitado de la vista; desde ahí se restauran">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE81C;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,1,7,0" />
+                        <TextBlock Text="{Binding HistoryText}" />
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding BacklogOpen}" Content="{Binding BacklogText}" Margin="0,2,8,2"
+                              ToolTip.Tip="Las que esperan fuera del tablero; traerlas o devolverlas solo cambia la app" />
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding Mine}" Content="Mías" IsVisible="{Binding MineVisible}" Margin="0,2,8,2"
+                              ToolTip.Tip="{Binding MineTip}" />
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding WithSession}" Content="Con sesión" Margin="0,2,8,2"
+                              ToolTip.Tip="Solo las que tienen alguna sesión de Claude Code, abierta o pasada" />
+                <!-- Etiquetas: desplegable propio, con su color y cuántas tareas llevan cada una -->
+                <Panel Margin="0,2,8,2">
+                    <Button Name="LabelsButton" Theme="{StaticResource ChipButton}" Click="Labels_Click" IsHitTestVisible="{Binding LabelsClosed}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding LabelsText}" />
+                            <TextBlock Text="&#xE70D;" Classes="icon" FontSize="8" VerticalAlignment="Center" Margin="8,1,0,0" />
+                        </StackPanel>
+                    </Button>
+                    <Popup IsOpen="{Binding LabelsOpen, Mode=TwoWay}" PlacementTarget="{Binding #LabelsButton}" Placement="BottomEdgeAlignedLeft"
+                           IsLightDismissEnabled="True" VerticalOffset="4">
+                        <Border Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}" BorderThickness="1"
+                                CornerRadius="{DynamicResource RadiusM}" Padding="6" Margin="0,0,12,12" MinWidth="280" MaxHeight="440" BoxShadow="0 3 16 0 #38000000">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top" Margin="8,4,2,6">
+                                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Content="Quitar filtro" Click="ClearLabels_Click"
+                                            IsVisible="{Binding ClearLabelsVisible}" />
+                                    <TextBlock Text="FILTRAR POR ETIQUETA" Classes="menuLabel" Margin="0" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Este tablero no tiene etiquetas." Foreground="{DynamicResource FgFaint}" FontSize="11"
+                                           Margin="8,0,8,6" IsVisible="{Binding NoLabelsVisible}" />
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding LabelOptions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:LabelOption">
+                                                <Border Classes="labelRow" Classes.on="{Binding IsOn}" CornerRadius="{DynamicResource RadiusS}" Padding="8,6" Margin="0,0,0,1"
+                                                        Background="Transparent" Cursor="Hand" PointerReleased="LabelOption_Click">
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" Foreground="{DynamicResource FgFaint}" FontSize="11"
+                                                                   VerticalAlignment="Center" Margin="16,0,2,0" />
+                                                        <Border DockPanel.Dock="Left" Classes="box">
+                                                            <TextBlock Classes="icon tick" Text="&#xE73E;" FontSize="10" />
+                                                        </Border>
+                                                        <Border CornerRadius="6" Padding="7,1,7,2" Background="{Binding Fill}" BorderBrush="{Binding Edge}" BorderThickness="1"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                            <TextBlock Classes="ownColor" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding Brush}" />
+                                                        </Border>
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+                    </Popup>
+                </Panel>
+                <Border Width="260" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource ButtonFill}" BorderBrush="{DynamicResource LensEdge}"
+                        BorderThickness="1" Padding="10,0" VerticalAlignment="Center" Margin="0,2">
+                    <Panel>
+                        <TextBlock Text="&#xE721;" Classes="icon" FontSize="11" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                   IsHitTestVisible="False" />
+                        <TextBox Name="Search" Margin="18,0,0,0" Padding="0,4" MinHeight="0" BorderThickness="0" Background="Transparent" FontSize="12"
+                                 VerticalContentAlignment="Center" PlaceholderText="Buscar por clave o título" Text="{Binding Query, Delay=200}" />
+                    </Panel>
+                </Border>
+            </WrapPanel>
+        </DockPanel>
+
+        <!-- AVISO: no se ha podido leer; lo último bueno sigue a la vista -->
+        <Border Grid.Row="1" CornerRadius="{DynamicResource RadiusS}" Padding="12,8" Margin="0,0,0,12" Background="{DynamicResource ButtonFill}"
+                IsVisible="{Binding ErrorVisible}">
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Danger}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- SIN TABLEROS: aún no hay ninguna conexión probada con tableros elegidos -->
+        <Border Grid.Row="2" Classes="lens" Padding="24,20" VerticalAlignment="Top" HorizontalAlignment="Left" MaxWidth="560"
+                IsVisible="{Binding EmptyVisible}">
+            <StackPanel>
+                <TextBlock Text="Conecta tu tablero de tareas" FontWeight="SemiBold" FontSize="14" />
+                <TextBlock Classes="settingHint" FontSize="12" Margin="0,6,0,12" TextWrapping="Wrap"
+                           Text="Importa el perfil de tu panel, crea una conexión, pruébala y elige qué proyectos o subtableros quieres ver. Arkko solo lee: no cambia nada en el panel." />
+                <Button Theme="{StaticResource PrimaryButton}" Content="Ir a Configuración → Tableros" HorizontalAlignment="Left" Click="Configure_Click" />
+            </StackPanel>
+        </Border>
+
+        <!-- TABLERO: las columnas, con el backlog la primera, y el detalle de la tarea elegida -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" IsVisible="{Binding BoardVisible}">
+            <ItemsControl ItemsSource="{Binding Columns}" ItemTemplate="{StaticResource TaskColumn}" IsVisible="{Binding ColumnsVisible}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <local:LanePanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+            <!-- CARRILES: con la vista de carriles y «Todos», una fila por subtablero; los nombres de las columnas, arriba una vez -->
+            <DockPanel IsVisible="{Binding LanesVisible}">
+                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Columns}" ItemTemplate="{StaticResource TaskColumnHead}" Margin="0,0,14,10">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <local:LanePanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Swimlanes}" ItemTemplate="{StaticResource Swimlane}" Margin="0,0,4,0" />
+                </ScrollViewer>
+            </DockPanel>
+            <!-- CARGA: hasta tener las tareas del tablero, el aro de Sesiones en lugar de las columnas, que vacías se plegarían -->
+            <StackPanel Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding LoadingVisible}">
+                <Grid Classes.spinning="{Binding LoadingVisible}" Width="34" Height="34" HorizontalAlignment="Center">
+                    <Ellipse Stroke="{DynamicResource TrackEdge}" StrokeThickness="3" />
+                    <Path Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeLineCap="Round" Data="M 17,1.5 A 15.5,15.5 0 0 1 32.5,17" />
+                </Grid>
+                <TextBlock Text="Leyendo las tareas…" Margin="0,14,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+            </StackPanel>
+            <!-- HISTORIAL: las quitadas de la vista, en una tabla; una fila se abre como una tarjeta y se restaura -->
+            <Border Background="{DynamicResource TaskLane}" CornerRadius="{DynamicResource RadiusM}" Padding="10,10,6,6" Margin="0,0,10,0"
+                    IsVisible="{Binding HistoryVisible}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,6,4">
+                        <TextBlock Text="&#xE81C;" Classes="icon" FontSize="12" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                        <TextBlock Classes="ownColor" Text="Historial" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                        <Border CornerRadius="9" Padding="7,0,7,1" Margin="8,0,0,0" Background="{DynamicResource TrackFill}" VerticalAlignment="Center">
+                            <TextBlock Classes="ownColor" Text="{Binding HistoryCards.Count}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource FgMuted}" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Top" Margin="6,0,6,10" FontSize="11" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap"
+                               Text="Las hechas y descartadas que has quitado de la vista. Restaurar una la devuelve a su columna; el panel no cambia." />
+                    <Grid DockPanel.Dock="Top" Classes="historyHead" Margin="10,0,18,6" ColumnDefinitions="30,110,*,150,120,120,190,34">
+                        <TextBlock Grid.Column="1" Text="CLAVE" />
+                        <TextBlock Grid.Column="2" Text="TÍTULO" />
+                        <TextBlock Grid.Column="3" Text="SUBTABLERO" />
+                        <TextBlock Grid.Column="4" Text="ESTADO" />
+                        <TextBlock Grid.Column="5" Text="ÚLTIMO CAMBIO" />
+                        <TextBlock Grid.Column="6" Text="SESIONES" />
+                    </Grid>
+                    <TextBlock DockPanel.Dock="Top" Text="Aún no has quitado ninguna de la vista." Foreground="{DynamicResource FgFaint}" FontSize="12"
+                               Margin="10,8,0,0" IsVisible="{Binding NoHistoryVisible}" />
+                    <!-- Páginas de 20 -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,10,2" IsVisible="{Binding PagerVisible}">
+                        <TextBlock Text="{Binding PageText}" FontSize="11" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <Button Theme="{StaticResource ChipButton}" Click="PrevPage_Click" IsEnabled="{Binding CanPrevPage}" ToolTip.Tip="Página anterior" Margin="0,0,6,0">
+                            <TextBlock Text="&#xE76B;" Classes="icon" FontSize="9" Margin="0,2" />
+                        </Button>
+                        <Button Theme="{StaticResource ChipButton}" Click="NextPage_Click" IsEnabled="{Binding CanNextPage}" ToolTip.Tip="Página siguiente">
+                            <TextBlock Text="&#xE76C;" Classes="icon" FontSize="9" Margin="0,2" />
+                        </Button>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding HistoryPage}" Margin="0,0,4,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="local:TaskCardModel">
+                                    <Border Classes="card" Classes.selected="{Binding IsSelected}" Classes.checked="{Binding IsChecked}"
+                                            CornerRadius="{DynamicResource RadiusS}" Padding="10,8" Margin="0,0,0,4" PointerReleased="Card_Click">
+                                        <Grid ColumnDefinitions="30,110,*,150,120,120,190,34">
+                                            <Border Classes="check can always" HorizontalAlignment="Left" PointerReleased="CheckBox_Click"
+                                                    ToolTip.Tip="Marcar (también Ctrl+clic; Mayús+clic marca hasta aquí)">
+                                                <Border Classes="box">
+                                                    <TextBlock Classes="icon tick" Text="&#xE73E;" />
+                                                </Border>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                                       Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                            <TextBlock Classes="ownColor" Grid.Column="2" Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"
+                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip.Tip="{Binding Title}" />
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" IsVisible="{Binding StripeVisible}">
+                                                <Ellipse Width="8" Height="8" Fill="{Binding DotBrush}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                                <TextBlock Text="{Binding BoardName}" FontSize="11" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <Border Grid.Column="4" CornerRadius="9" Padding="8,1,9,2" Background="{Binding StateFill}" HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="6" Height="6" Fill="{Binding StateBrush}" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                                    <TextBlock Text="{Binding StateText}" FontSize="11" Foreground="{DynamicResource Fg}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Grid.Column="5" Text="{Binding UpdatedText}" FontSize="11" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center" IsVisible="{Binding StripVisible}">
+                                                <TextBlock Text="&#xE756;" Classes="icon" FontSize="10" Foreground="{DynamicResource FgMuted}"
+                                                           VerticalAlignment="Center" Margin="0,1,6,0" />
+                                                <TextBlock Text="{Binding FooterRight}" FontSize="11" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <Button Grid.Column="7" Theme="{StaticResource CardAction}" Content="{Binding ActionGlyph}" Click="CardAction_Click"
+                                                    ToolTip.Tip="{Binding ActionTip}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- SELECCIÓN: con alguna tarjeta marcada, lo que se puede hacer con todas a la vez -->
+            <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,18" Padding="16,8,8,8" CornerRadius="{DynamicResource RadiusL}"
+                    Background="{DynamicResource TipFill}" BorderBrush="{DynamicResource TipEdge}" BorderThickness="1" IsVisible="{Binding SelectionVisible}"
+                    BoxShadow="0 3 18 0 #40000000">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Classes="ownColor" Text="{Binding SelectionText}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                    <ItemsControl ItemsSource="{Binding BulkActions}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:BulkAction">
+                                <Button Theme="{StaticResource ChipButton}" Click="Bulk_Click" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Glyph}" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                        <TextBlock Text="{Binding Text}" />
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Theme="{StaticResource ChipButton}" Content="Cancelar" Click="ClearChecked_Click" />
+                </StackPanel>
+            </Border>
+
+            <!-- DETALLE: cabecera, datos, sesiones y descripción, cada bloque con su fondo; solo la descripción tiene scroll -->
+            <Border Grid.Column="1" Width="400" Background="{DynamicResource TaskCardFill}" BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="1"
+                    CornerRadius="{DynamicResource RadiusM}" IsVisible="{Binding DetailVisible}">
+                <DockPanel DataContext="{Binding Selected}" x:DataType="local:TaskCardModel">
+                    <!-- Subtablero: franja arriba, en su color y con su nombre -->
+                    <Border DockPanel.Dock="Top" CornerRadius="11,11,0,0" Background="{Binding StripeBrush}" Padding="14,7,14,8" IsVisible="{Binding BandVisible}">
+                        <TextBlock Classes="ownColor" Text="{Binding BoardName}" FontSize="13" FontWeight="Bold" Foreground="{Binding StripeForeground}" HorizontalAlignment="Center" />
+                    </Border>
+                    <!-- Cabecera: estado, clave y título -->
+                    <StackPanel DockPanel.Dock="Top" Margin="20,16,14,14">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Theme="{StaticResource CardAction}" Content="&#xE711;" Click="CloseDetail_Click" ToolTip.Tip="Cerrar"
+                                    VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border CornerRadius="10" Padding="9,2,10,3" Background="{Binding StateFill}" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="7" Height="7" Fill="{Binding StateBrush}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                        <TextBlock Classes="ownColor" Text="{Binding StateText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{DynamicResource FgLabel}"
+                                           VerticalAlignment="Center" Margin="10,0,0,0" />
+                                <Border CornerRadius="6" Padding="6,1,7,2" Margin="10,0,0,0" Background="{Binding BoardTint}" VerticalAlignment="Center"
+                                        IsVisible="{Binding DetailChipVisible}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                        <TextBlock Classes="ownColor" Text="{Binding BoardName}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource FgLabel}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock Classes="ownColor" Text="{Binding Title}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap"
+                                   LineHeight="23" Margin="0,12,0,0" />
+                    </StackPanel>
+
+                    <!-- Acciones, abajo del todo -->
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="0,1,0,0" Padding="20,12">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Theme="{StaticResource PrimaryButton}" Content="Abrir en el panel" Click="OpenTask_Click" Margin="0,0,8,0"
+                                    IsVisible="{Binding LinkVisible}" />
+                            <Button Theme="{StaticResource ChipButton}" Click="CardAction_Click" ToolTip.Tip="{Binding ActionTip}" VerticalAlignment="Center"
+                                    IsVisible="{Binding ActionVisible}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding ActionGlyph}" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                    <TextBlock Text="{Binding ActionText}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Theme="{StaticResource ChipButton}" Click="CardSecond_Click" ToolTip.Tip="{Binding SecondTip}" VerticalAlignment="Center"
+                                    Margin="8,0,0,0" IsVisible="{Binding SecondVisible}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding SecondGlyph}" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                    <TextBlock Text="{Binding SecondText}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Datos: plegables; plegados, en una línea -->
+                    <Border DockPanel.Dock="Top" Classes="detailSection">
+                        <StackPanel>
+                            <DockPanel Cursor="Hand" Background="Transparent" PointerReleased="FoldFactsHeader_Click">
+                                <TextBlock DockPanel.Dock="Right" Text="{ReflectionBinding $parent[UserControl].DataContext.FactsGlyph}"
+                                           Classes="icon" FontSize="9" Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                <TextBlock Text="DATOS" Classes="menuLabel" Margin="0" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding FactsSummary}" Foreground="{DynamicResource Fg}" FontSize="12" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"
+                                       IsVisible="{ReflectionBinding $parent[UserControl].DataContext.FactsSummaryVisible}" />
+                            <StackPanel Margin="0,6,0,0" IsVisible="{ReflectionBinding $parent[UserControl].DataContext.FactsVisible}">
+                                <ItemsControl ItemsSource="{Binding Facts}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:TaskFact">
+                                            <DockPanel Margin="0,2">
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource FgMuted}" FontSize="12" Width="100" />
+                                                <TextBlock Text="{Binding Value}" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" FontSize="12" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding Labels}" ItemTemplate="{StaticResource TaskLabel}" Margin="0,8,0,-5" IsVisible="{Binding LabelsVisible}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Rama: su worktree, su PR y lo que tiene sin subir; si ya sobra, la orden que lo cierra, para copiarla -->
+                    <Border DockPanel.Dock="Top" Classes="detailSection" IsVisible="{Binding TreeVisible}">
+                        <StackPanel>
+                            <TextBlock Text="RAMA" Classes="menuLabel" Margin="0,0,0,8" />
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" CornerRadius="9" Padding="6,1,8,2" Background="{Binding PrFill}" VerticalAlignment="Center"
+                                        IsVisible="{Binding PrVisible}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Data="{x:Static local:GlyphShapes.PullRequest}" Stroke="{Binding PrBrush}" StrokeThickness="1.4" Width="11" Height="11"
+                                              Stretch="Uniform" VerticalAlignment="Center" Margin="0,1,5,0" />
+                                        <TextBlock Classes="ownColor" Text="{Binding PrText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding PrBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{Binding TreeFolder}" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{DynamicResource Fg}"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock Classes="ownColor" Text="{Binding TreeLocal}" Foreground="{Binding TreeLocalBrush}" FontSize="11" Margin="0,4,0,0" />
+                            <StackPanel IsVisible="{Binding CloseVisible}" Margin="0,10,0,0">
+                                <TextBlock Text="{Binding CloseReason}" Foreground="{DynamicResource Fg}" FontSize="12" TextWrapping="Wrap" />
+                                <TextBlock Text="Ya se puede cerrar el worktree." Foreground="{DynamicResource Fg}" FontSize="12" />
+                                <TextBlock Text="{Binding CloseWarning}" IsVisible="{Binding CloseWarningVisible}" Foreground="{DynamicResource DataFiveHour}"
+                                           FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                <Button Theme="{StaticResource ChipButton}" Click="CopyClose_Click" HorizontalAlignment="Left" Margin="0,8,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8C8;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                        <TextBlock Text="{Binding CloseButtonText}" />
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Text="{Binding ClosePaste}" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sesiones: las que trabajan en una carpeta con su clave; las últimas y, si hay más, «Ver todas» -->
+                    <Border DockPanel.Dock="Top" Classes="detailSection">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SessionsTitle}" Classes="menuLabel" Margin="0,0,0,8" />
+                            <!-- Lo que ha costado, en cifras grandes -->
+                            <UniformGrid Columns="3" Margin="0,0,0,8" IsVisible="{Binding UsageTotalVisible}">
+                                <Border Background="{DynamicResource TaskCardFill}" CornerRadius="{DynamicResource RadiusS}" Padding="10,7" Margin="0,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Classes="ownColor" Text="{Binding UsagePrompts}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                        <TextBlock Text="prompts" FontSize="11" Foreground="{DynamicResource FgMuted}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource TaskCardFill}" CornerRadius="{DynamicResource RadiusS}" Padding="10,7" Margin="3,0,3,0">
+                                    <StackPanel>
+                                        <TextBlock Classes="ownColor" Text="{Binding UsageTokens}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                        <TextBlock Text="tokens nuevos" FontSize="11" Foreground="{DynamicResource FgMuted}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource TaskCardFill}" CornerRadius="{DynamicResource RadiusS}" Padding="10,7" Margin="6,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Classes="ownColor" Text="{Binding UsageTime}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                        <TextBlock Text="de trabajo" FontSize="11" Foreground="{DynamicResource FgMuted}" />
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+                            <TextBlock Text="{Binding UsageNote}" IsVisible="{Binding UsageNoteVisible}" Foreground="{DynamicResource FgMuted}" FontSize="11"
+                                       TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding Sessions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:TaskSessionRow">
+                                        <Border Classes="sessionRow" CornerRadius="{DynamicResource RadiusS}" Padding="10,7" Margin="0,0,0,4"
+                                                Background="{DynamicResource TaskCardFill}" BorderBrush="Transparent" BorderThickness="1"
+                                                Cursor="Hand" PointerReleased="Session_Click" ToolTip.Tip="Ver la sesión">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Theme="{StaticResource CardAction}" Content="&#xE711;" Click="Unlink_Click"
+                                                        ToolTip.Tip="{Binding UnlinkTip}" VerticalAlignment="Center" />
+                                                <Button DockPanel.Dock="Right" Theme="{StaticResource CardAction}" Content="&#xE734;" Click="MakePrincipal_Click"
+                                                        ToolTip.Tip="Hacerla la principal de esta sesión: se lleva su coste" VerticalAlignment="Center"
+                                                        IsVisible="{Binding MakePrincipalVisible}" />
+                                                <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding StatusBrush}" VerticalAlignment="Top" Margin="0,5,8,0"
+                                                         ToolTip.Tip="{Binding StatusText}" />
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                                        <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+                                                        <Border CornerRadius="7" Padding="6,0,6,1" Margin="8,0,0,0" Background="{DynamicResource TrackFill}"
+                                                                IsVisible="{Binding OriginVisible}" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Origin}" FontSize="10" Foreground="{DynamicResource FgMuted}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Theme="{StaticResource ChipButton}" Content="{Binding MoreSessionsText}" Click="MoreSessions_Click" HorizontalAlignment="Left"
+                                    Margin="0,6,0,0" IsVisible="{Binding MoreSessionsVisible}" />
+                            <TextBlock Text="{Binding SessionsNote}" Foreground="{DynamicResource FgFaint}" FontSize="11" TextWrapping="Wrap"
+                                       IsVisible="{Binding SessionsNoteVisible}" />
+                            <Button Theme="{StaticResource ChipButton}" Click="LinkSession_Click" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                    ToolTip.Tip="Añade esta tarea a una sesión que también trabaja en ella; su coste sigue en la principal de la sesión">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE71B;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                    <TextBlock Text="Vincular una sesión…" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Descripción formateada: ocupa el resto y es lo único con scroll -->
+                    <Border Classes="detailSection" Margin="14,0,14,14" Padding="14,10,4,8">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="DESCRIPCIÓN" Classes="menuLabel" Margin="0,0,0,6" />
+                            <TextBlock DockPanel.Dock="Top" Text="Sin descripción." Foreground="{DynamicResource FgFaint}" FontSize="12"
+                                       IsVisible="{Binding NoDescriptionVisible}" />
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,10,0"
+                                          IsVisible="{Binding DescriptionVisible}">
+                                <ContentControl Content="{Binding Document}" />
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

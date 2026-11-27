@@ -1,0 +1,45 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.DataSettingsView"
+             x:DataType="local:DataModel">
+    <StackPanel>
+        <TextBlock Classes="menuLabel" Text="DATOS Y RETENCIÓN" Margin="2,0,0,8" />
+        <!-- UNA FICHA POR HERRAMIENTA: primero lo que guarda esta app; después, lo que guarda cada agente -->
+        <Border Classes="lens" Padding="16,12">
+            <StackPanel>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding TotalText}" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" />
+                    <Image Source="{DynamicResource AppLogo}" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+                    <TextBlock Text="Arkko" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Foreground="{DynamicResource FgMuted}" Classes="body" TextWrapping="Wrap" Margin="0,8,0,8"
+                           Text="Todo se guarda solo en este equipo. Elige cuánto tiempo se conserva cada cosa: pasado su plazo, se borra en la limpieza automática, que se hace al abrir la app y una vez al día." />
+                <ItemsControl ItemsSource="{Binding Categories}" ItemTemplate="{StaticResource RetentionRow}" />
+                <TextBlock Foreground="{DynamicResource FgFaint}" Classes="caption" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Text="Pasado el plazo del texto, el prompt sigue en el histórico con sus cifras: solo se le quita lo que escribiste." />
+
+                <Border Height="1" Background="{DynamicResource TrackEdge}" Margin="0,12" />
+                <TextBlock Text="Limpieza automática" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource FgMuted}" Margin="0,2,0,0"
+                           Text="Además de los plazos, se borra siempre lo que ya no sirve: sesiones que se cerraron mal, los límites de cada sesión pasados 2 días, el registro de errores más allá de lo último y las copias de settings.json salvo las 5 más recientes." />
+                <TextBlock Text="{Binding LastCleanup}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,8,0,0" />
+
+                <!-- ACCIONES: los plazos se guardan solos al elegirlos; esto solo abre la carpeta o limpia ya -->
+                <DockPanel Margin="0,16,0,0">
+                    <Button DockPanel.Dock="Left" Theme="{StaticResource ChipButton}" Click="OpenFolder_Click" ToolTip.Tip="Abre la carpeta de datos">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE838;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Abrir carpeta" />
+                        </StackPanel>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="CleanNow_Click"
+                            ToolTip.Tip="Limpia ahora con los plazos elegidos, sin esperar a la limpieza automática" Content="Limpiar ahora" />
+                    <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource FgFaint}" Classes="label" VerticalAlignment="Center" Margin="12,0" />
+                </DockPanel>
+            </StackPanel>
+        </Border>
+        <local:ClaudeCodeRetentionView Name="ClaudeCode" Margin="0,16,0,0" />
+    </StackPanel>
+</UserControl>

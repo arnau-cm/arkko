@@ -1,0 +1,12 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Arkko.Desktop.ClocksView">
+    <!-- RELOJES: la vista entera es una página web local; aquí solo se aloja y se le pasan los relojes de cada sesión -->
+    <!-- El navegador lo pone el código al entrar en la sección, como primer hijo, escondido hasta que la página está lista -->
+    <Grid Name="Host">
+        <TextBlock Name="Loading" Text="Cargando relojes…" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource FgMuted}" />
+        <TextBlock Name="Failure" IsVisible="False" TextWrapping="Wrap" MaxWidth="520" Margin="24"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+    </Grid>
+</UserControl>

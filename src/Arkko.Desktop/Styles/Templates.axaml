@@ -1,0 +1,134 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Arkko.Desktop">
+    <!-- Estados de las plantillas compartidas: lo que en la ventana de WPF eran disparadores. Las plantillas
+         ponen clases según sus datos (working, overdue, review…) y aquí se dice qué cambia con cada una. -->
+
+    <!-- GOTA: el halo late mientras la sesión trabaja; la gota parpadea si lleva rato sin revisar -->
+    <Style Selector="Grid.droplet.working > Ellipse.halo">
+        <Style.Animations>
+            <Animation Duration="0:0:0.9" IterationCount="INFINITE" PlaybackDirection="Alternate">
+                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.05" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0.5" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+    <Style Selector="Grid.droplet.overdue > Ellipse.drop">
+        <Style.Animations>
+            <Animation Duration="0:0:0.6" IterationCount="INFINITE" PlaybackDirection="Alternate">
+                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0.2" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- PUNTO EN ÓRBITA: el de la sesión que espera a sus agentes gira despacio, una vuelta cada cuatro segundos -->
+    <Style Selector="local|OrbitDot">
+        <Style.Animations>
+            <Animation Duration="0:0:4" IterationCount="INFINITE">
+                <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- PUNTO DE CONSOLA: el de la sesión que espera a un comando respira despacio, sin girar como el de los agentes -->
+    <Style Selector="local|CommandDot">
+        <Style.Animations>
+            <Animation Duration="0:0:1.8" IterationCount="INFINITE">
+                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+                <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.55" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- AGENTE QUE YA ACABÓ: tachado en la tarjeta hasta que la sesión retoma -->
+    <Style Selector="TextBlock.gone">
+        <Setter Property="TextDecorations" Value="Strikethrough" />
+        <Setter Property="Opacity" Value="0.7" />
+    </Style>
+
+    <!-- FILA BREVE: tinte de su estado si pide revisión y resalte al pasar el ratón -->
+    <Style Selector="Border.miniRow">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.miniRow.review">
+        <Setter Property="Background" Value="{ReflectionBinding StatusTint}" />
+    </Style>
+    <Style Selector="Button:pointerover Border.miniRow">
+        <Setter Property="Background" Value="{DynamicResource ButtonHover}" />
+    </Style>
+
+    <!-- PASTILLA «SIN REVISAR»: roja y en blanco si lleva rato así -->
+    <Style Selector=":is(Control).overdue Border.reviewPill">
+        <Setter Property="Background" Value="{DynamicResource Danger}" />
+    </Style>
+    <Style Selector=":is(Control).overdue Ellipse.reviewDot">
+        <Setter Property="Fill" Value="White" />
+    </Style>
+    <Style Selector=":is(Control).overdue TextBlock.reviewText">
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- TARJETA: borde y fondo del color de lo que pide -->
+    <Style Selector="Border.card.accent">
+        <Setter Property="BorderBrush" Value="{ReflectionBinding CardBorder}" />
+    </Style>
+    <Style Selector="Border.card.tinted">
+        <Setter Property="Background" Value="{ReflectionBinding CardBackground}" />
+    </Style>
+
+    <!-- Lo que lleva esperando: en el color de la espera; si no, apagado -->
+    <Style Selector="TextBlock.since">
+        <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+    </Style>
+    <Style Selector="TextBlock.since.waited">
+        <Setter Property="Foreground" Value="{ReflectionBinding SinceBrush}" />
+    </Style>
+
+    <!-- Borde y fondo rojos que laten despacio cuando lleva rato terminada sin revisar; el tinte, muy bajo
+         (máx. 12 %) y lento: se nota de reojo sin cansar la vista. -->
+    <Style Selector="Grid.sessionCard.overdue > Border.glow">
+        <Style.Animations>
+            <Animation Duration="0:0:1.6" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.25" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+    <Style Selector="Grid.sessionCard.overdue > Border.glowFill">
+        <Style.Animations>
+            <Animation Duration="0:0:1.6" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0.02" /></KeyFrame>
+                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0.12" /></KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- CHIP DE TAREA: la principal resaltada y el borde del acento al pasar el ratón -->
+    <Style Selector="Border.taskChip TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource FgMuted}" />
+    </Style>
+    <Style Selector="Border.taskChip.principal TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button:pointerover > Border.taskChip">
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <!-- FILA DE MODELO: apagada si no tiene ficha y con fondo al pasar el ratón -->
+    <Style Selector="Grid.modelRow.noTip">
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource FgFaint}" />
+    </Style>
+    <Style Selector="Grid.modelRow:pointerover > Border.hover">
+        <Setter Property="Background" Value="{DynamicResource ButtonFill}" />
+    </Style>
+
+    <!-- FOCO DE TECLADO: sin marca en ningún control. La app se usa con el ratón, y el recuadro que el tema pinta al
+         llegar con Tab no aporta nada -->
+    <Style Selector=":is(Control)">
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+</Styles>

@@ -1,0 +1,69 @@
+{
+  "themes": [
+    { "id": "app", "name": "Como la app", "hint": "Sigue el diseño de la app: GitHub oscuro en los oscuros y GitHub claro en Glass claro.", "sample": { "bg": "#0d1117", "edge": "#30363d", "colors": ["#ff7b72", "#d2a8ff", "#79c0ff", "#a5d6ff", "#8b949e"] } },
+    { "id": "vs-light", "name": "Visual Studio claro", "tone": "light", "sample": { "bg": "#ffffff", "edge": "#d6d6d6", "colors": ["#0000ff", "#74531f", "#2b91af", "#a31515", "#008000"] } },
+    { "id": "vs-dark", "name": "Visual Studio oscuro", "tone": "dark", "sample": { "bg": "#1e1e1e", "edge": "#3f3f46", "colors": ["#569cd6", "#dcdcaa", "#4ec9b0", "#d69d85", "#57a64a"] } },
+    { "id": "github-light", "name": "GitHub claro", "tone": "light", "sample": { "bg": "#ffffff", "edge": "#d0d7de", "colors": ["#cf222e", "#8250df", "#953800", "#0a3069", "#6e7781"] } },
+    { "id": "github-dark", "name": "GitHub oscuro", "tone": "dark", "sample": { "bg": "#0d1117", "edge": "#30363d", "colors": ["#ff7b72", "#d2a8ff", "#79c0ff", "#a5d6ff", "#8b949e"] } }
+  ],
+  "languages": [
+    {
+      "id": "cs", "name": "C#", "extensions": ["cs", "csx"], "defaultTheme": "vs-light",
+      "engine": "code", "comment": "//", "block": true, "doc": "///", "preproc": true, "verbatim": true,
+      "keywords": "abstract as async await base bool byte char checked class const decimal delegate double enum event explicit extern false fixed float get global implicit in init int interface internal is long namespace new nameof not null object operator out override params partial private protected public readonly record ref sbyte sealed set short sizeof stackalloc static string struct this true typeof uint ulong unchecked unsafe ushort using value var virtual void volatile when where with and or",
+      "control": "if else switch case default for foreach while do break continue return goto throw try catch finally yield lock"
+    },
+    { "id": "razor", "name": "Razor", "extensions": ["cshtml", "razor"], "defaultTheme": "vs-light", "engine": "razor", "code": "cs" },
+    {
+      "id": "js", "name": "JavaScript", "extensions": ["js", "mjs", "cjs", "jsx"],
+      "engine": "code", "comment": "//", "block": true,
+      "keywords": "async await class const debugger delete export extends false from function get import in instanceof let new null of set static super this true typeof undefined var void",
+      "control": "if else switch case default for while do break continue return throw try catch finally yield"
+    },
+    {
+      "id": "ts", "name": "TypeScript", "extensions": ["ts", "tsx"],
+      "engine": "code", "comment": "//", "block": true,
+      "keywords": "abstract any as async await boolean class const declare delete enum export extends false from function get implements import in instanceof interface keyof let namespace never new null number private protected public readonly set static string super this true type typeof undefined unknown var void",
+      "control": "if else switch case default for while do break continue return throw try catch finally yield"
+    },
+    {
+      "id": "py", "name": "Python", "extensions": ["py", "pyw"],
+      "engine": "code", "comment": "#", "sigil": "@",
+      "keywords": "and as async await class def del False global import from in is lambda None nonlocal not or self True",
+      "control": "if elif else for while break continue return try except finally raise with yield pass assert"
+    },
+    {
+      "id": "ps", "name": "PowerShell", "extensions": ["ps1", "psm1", "psd1"],
+      "engine": "code", "comment": "#", "sigil": "$", "nocase": true, "dash": true,
+      "keywords": "begin class data dynamicparam end enum filter function in param process using -and -or -not -eq -ne -gt -lt -ge -le -like -notlike -match -notmatch -replace -contains -notcontains -is -isnot",
+      "control": "if elseif else switch for foreach while do until break continue return throw try catch finally trap exit"
+    },
+    {
+      "id": "sh", "name": "Bash", "extensions": ["sh", "bash", "zsh"],
+      "engine": "code", "comment": "#", "sigil": "$", "dash": true,
+      "keywords": "echo export function local read set shift cd grep sed awk git dotnet npm python",
+      "control": "if then elif else fi case esac for while until do done break continue return exit"
+    },
+    {
+      "id": "sql", "name": "SQL", "extensions": ["sql"],
+      "engine": "code", "comment": "--", "block": true, "nocase": true, "types": false,
+      "keywords": "add alter and as asc begin between by case commit create declare delete desc distinct drop else end exec exists from group having if in inner insert into is join key left like merge not null on or order primary references right rollback select set table then top transaction truncate union update values view when where with"
+    },
+    { "id": "json", "name": "JSON", "extensions": ["json", "jsonl"], "engine": "code", "types": false, "methods": false, "keywords": "true false null" },
+    { "id": "yaml", "name": "YAML", "extensions": ["yml", "yaml"], "engine": "code", "comment": "#", "types": false, "methods": false, "keywords": "true false null yes no" },
+    { "id": "css", "name": "CSS", "extensions": ["css", "scss", "less"], "engine": "code", "block": true, "dash": true, "types": false, "keywords": "important inherit initial none auto" },
+    { "id": "html", "name": "HTML", "extensions": ["html", "htm"], "engine": "markup" },
+    { "id": "xml", "name": "XML", "extensions": ["xml", "resx", "config", "manifest"], "engine": "markup" },
+    { "id": "xaml", "name": "XAML", "extensions": ["xaml", "axaml"], "engine": "markup" },
+    { "id": "msbuild", "name": "MSBuild", "extensions": ["csproj", "props", "targets", "vbproj", "fsproj"], "engine": "markup" },
+    { "id": "svg", "name": "SVG", "extensions": ["svg"], "engine": "markup" },
+    { "id": "md", "name": "Markdown", "extensions": ["md", "markdown"], "engine": "md" },
+    { "id": "txt", "name": "Texto", "extensions": ["txt", "log"], "engine": "plain" },
+    {
+      "id": "other", "name": "Otros lenguajes", "extensions": [],
+      "engine": "code", "comment": "//", "block": true,
+      "keywords": "class const default enum extends false final func function go import interface let new nil null package private public static struct this true type var void",
+      "control": "if else switch case for while do break continue return"
+    }
+  ]
+}

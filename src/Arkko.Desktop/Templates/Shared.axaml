@@ -1,0 +1,421 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="using:Arkko.Desktop">
+    <!-- PLANTILLAS COMPARTIDAS: la ventana flotante y el Inicio del panel usan las mismas, como en la de WPF.
+         Los clics van por los comandos de SessionActions: estas plantillas no tienen código propio. -->
+
+    <!-- BARRA DE LÍMITE: uso actual y, detrás y más tenue, el previsto al renovarse -->
+    <DataTemplate x:Key="LimitBar" x:DataType="local:LimitRow">
+        <Grid>
+            <Border CornerRadius="5" Background="{DynamicResource TrackFill}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="1" />
+            <ProgressBar Theme="{StaticResource BareProgress}" Value="{Binding Projected}" Foreground="{Binding GhostBrush}" Opacity="0.35" />
+            <ProgressBar Theme="{StaticResource BareProgress}" Value="{Binding Pct}" Foreground="{Binding Brush}" />
+        </Grid>
+    </DataTemplate>
+
+    <!-- FICHA DE UN LÍMITE: el tooltip de sus barras, con uso, renovación y previsión -->
+    <DataTemplate x:Key="LimitTip" x:DataType="local:LimitRow">
+        <Grid MinWidth="230" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.ColumnSpan="2" Text="{Binding TipTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Text="Uso actual" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PctText}" FontWeight="SemiBold" Margin="0,1" />
+            <TextBlock Grid.Row="2" Text="Renovación" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ResetText}" Margin="0,1" />
+            <TextBlock Grid.Row="3" Text="Previsión" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ForecastText}" Foreground="{Binding ForecastBrush}" Margin="0,1" />
+            <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="Estimación según el ritmo medio del periodo en curso."
+                       Classes="caption" Foreground="{DynamicResource FgFaint}" Margin="0,8,0,0" />
+        </Grid>
+    </DataTemplate>
+
+    <!-- Límite en pequeño: el del modo compacto y la cabecera de límites plegada -->
+    <DataTemplate x:Key="MiniLimit" x:DataType="local:LimitRow">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" Background="Transparent">
+            <ToolTip.Tip>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitTip}" />
+            </ToolTip.Tip>
+            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitBar}" Width="54" Height="8" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding PctText}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Límite que se estira al ancho que le toca: el del modo compacto y el panel de la pastilla -->
+    <DataTemplate x:Key="WideLimit" x:DataType="local:LimitRow">
+        <Grid Margin="0,0,16,0" Background="Transparent" ColumnDefinitions="Auto,*,Auto">
+            <ToolTip.Tip>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitTip}" />
+            </ToolTip.Tip>
+            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ContentControl Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource LimitBar}" Height="8" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding PctText}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0" />
+        </Grid>
+    </DataTemplate>
+
+    <!-- Fila de límite de la vista completa: nombre, barra con previsión, porcentaje y renovación -->
+    <DataTemplate x:Key="LimitLine" x:DataType="local:LimitRow">
+        <Grid Margin="0,3" Background="Transparent" ColumnDefinitions="64,*,44,56">
+            <ToolTip.Tip>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitTip}" />
+            </ToolTip.Tip>
+            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis" />
+            <ContentControl Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource LimitBar}" Height="10" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding PctText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="3" Text="{Binding Reset}" HorizontalAlignment="Right" Foreground="{DynamicResource FgFaint}" />
+        </Grid>
+    </DataTemplate>
+
+    <!-- Ficha de un límite en el panel: nombre, % en grande, barra con la previsión, renovación y previsión en texto -->
+    <DataTemplate x:Key="LimitTile" x:DataType="local:LimitRow">
+        <Border CornerRadius="{DynamicResource RadiusS}" Background="{DynamicResource ButtonFill}" Padding="14,10" Margin="0,0,8,0">
+            <ToolTip.Tip>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitTip}" />
+            </ToolTip.Tip>
+            <StackPanel>
+                <TextBlock Text="{Binding TipTitle}" Foreground="{DynamicResource FgLabel}" Classes="label" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding PctText}" Classes="metric" Margin="0,2,0,6" />
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LimitBar}" Height="8" />
+                <TextBlock Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="0,8,0,0" TextTrimming="CharacterEllipsis">
+                    <Run Text="Se renueva " /><Run Text="{Binding ResetText}" />
+                </TextBlock>
+                <TextBlock Text="{Binding ForecastText}" Foreground="{Binding ForecastBrush}" FontSize="11" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+    <!-- FICHA DE UN MODELO: el tooltip de «Hoy por modelo», con el desglose de sus tokens -->
+    <DataTemplate x:Key="ModelTipCard" x:DataType="local:ModelTip">
+        <Grid MinWidth="230" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Grid.ColumnSpan="2" Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Text="Tokens nuevos" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding New}" HorizontalAlignment="Right" Margin="0,1" FontWeight="SemiBold" />
+            <TextBlock Grid.Row="2" Text="Entrada" Foreground="{DynamicResource FgFaint}" Margin="12,1,16,1" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Input}" HorizontalAlignment="Right" Margin="0,1" Foreground="{DynamicResource FgMuted}" />
+            <TextBlock Grid.Row="3" Text="Salida" Foreground="{DynamicResource FgFaint}" Margin="12,1,16,1" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Output}" HorizontalAlignment="Right" Margin="0,1" Foreground="{DynamicResource FgMuted}" />
+            <TextBlock Grid.Row="4" Text="Escritura en caché" Foreground="{DynamicResource FgFaint}" Margin="12,1,16,1" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CacheWrite}" HorizontalAlignment="Right" Margin="0,1" Foreground="{DynamicResource FgMuted}" />
+            <TextBlock Grid.Row="5" Text="Lectura de caché" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding CacheRead}" HorizontalAlignment="Right" Margin="0,1" />
+            <TextBlock Grid.Row="6" Text="Llamadas a la API" Foreground="{DynamicResource FgMuted}" Margin="0,1,16,1" />
+            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Calls}" HorizontalAlignment="Right" Margin="0,1" />
+            <TextBlock Grid.Row="7" Grid.ColumnSpan="2" MaxWidth="260" HorizontalAlignment="Left"
+                       Text="La lectura de caché es el contexto que se relee en cada llamada; cuesta en torno a una décima parte de un token nuevo."
+                       Classes="caption" Foreground="{DynamicResource FgFaint}" Margin="0,8,0,0" TextWrapping="Wrap" />
+        </Grid>
+    </DataTemplate>
+
+    <!-- Fila de «Hoy por modelo»: punto y nombre del modelo con su caché y llamadas, tokens y parte del día,
+         y de fondo su color tenue a escala del que más gasta -->
+    <DataTemplate x:Key="ModelShareRow" x:DataType="local:ModelRow">
+        <Grid Classes="modelRow" Classes.noTip="{Binding !HasTip}" Margin="0,2" Background="Transparent">
+            <ToolTip.Tip>
+                <ContentControl Content="{Binding Tip}" ContentTemplate="{StaticResource ModelTipCard}" IsVisible="{Binding HasTip}" />
+            </ToolTip.Tip>
+            <local:FractionFill Fraction="{Binding Fraction}" Fill="{Binding Fill}" Radius="8" />
+            <Border Classes="hover" CornerRadius="{DynamicResource RadiusS}" Background="Transparent" />
+            <DockPanel Margin="10,6">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Pct}" Foreground="{DynamicResource FgFaint}" Width="40" TextAlignment="Right" VerticalAlignment="Center" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Total}" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center" />
+                <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Fill="{Binding Brush}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontWeight="{Binding Weight}" Foreground="{DynamicResource FgStrong}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" Margin="10,0,0,0" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Contenido de «Hoy por modelo», en el panel y en la flotante: total del día con caché y llamadas,
+         reparto entre modelos y una fila por modelo -->
+    <DataTemplate x:Key="ModelsSummary" x:DataType="local:MainViewModel">
+        <StackPanel>
+            <DockPanel Margin="2,0,2,8" IsVisible="{Binding ModelsSummaryVisible}">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding ModelsDetail}" Foreground="{DynamicResource FgFaint}" FontSize="11"
+                           VerticalAlignment="Bottom" Margin="12,0,0,3" TextTrimming="CharacterEllipsis" />
+                <TextBlock VerticalAlignment="Bottom">
+                    <Run Text="{Binding ModelsTotal}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource FgTitle}" /><Run
+                         Text="  tokens nuevos" Foreground="{DynamicResource FgMuted}" FontSize="11" />
+                </TextBlock>
+            </DockPanel>
+            <local:ShareBar Height="6" Margin="2,0,2,8" Slices="{Binding ModelShares}" IsVisible="{Binding ModelsSummaryVisible}" />
+            <ItemsControl ItemsSource="{Binding Models}" ItemTemplate="{StaticResource ModelShareRow}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Gota de color con reflejo, para los estados de sesión; late mientras la sesión trabaja. Si espera a sus agentes, en su
+         lugar va el punto en órbita; si espera a un comando, el recuadro de consola -->
+    <DataTemplate x:Key="Droplet" x:DataType="local:SessionRow">
+        <!-- 18 px para que quepa el halo. Sin margen negativo: Avalonia recorta lo que no cabe en su hueco, y el halo saldría cuadrado -->
+        <Grid Classes="droplet" Classes.working="{Binding Working}" Classes.overdue="{Binding ReviewOverdue}"
+              Width="18" Height="18" ToolTip.Tip="{Binding DropletTip}">
+            <Ellipse Classes="halo" Fill="{Binding DropletBrush}" Opacity="0" IsHitTestVisible="False" IsVisible="{Binding PlainDot}" />
+            <Ellipse Classes="drop" Width="10" Height="10" Fill="{Binding DropletBrush}" IsVisible="{Binding PlainDot}" />
+            <Ellipse Width="4" Height="3" Fill="#B3FFFFFF" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5.5,5,0,0" IsVisible="{Binding PlainDot}" />
+            <local:OrbitDot Width="12" Height="12" Brush="{Binding Brush}" IsVisible="{Binding Agents}" />
+            <local:CommandDot Width="15" Height="12" Brush="{Binding Brush}" IsVisible="{Binding Command}" />
+        </Grid>
+    </DataTemplate>
+
+
+
+    <!-- Fila de sesión breve: gota, nombre, estado y tiempo; la usan el panel de la pastilla y el compacto -->
+    <DataTemplate x:Key="SessionMiniRow" x:DataType="local:SessionRow">
+        <Button Theme="{StaticResource PlainButton}" Command="{x:Static local:SessionActions.Card}" CommandParameter="{Binding}">
+            <Button.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Classes="caption" Header="{Binding Title}" />
+                    <MenuItem Header="Ver sesión" Command="{x:Static local:SessionActions.ViewSession}" CommandParameter="{Binding}">
+                        <MenuItem.Icon>
+                            <TextBlock Classes="icon" Text="&#xE890;" FontSize="14" Foreground="{DynamicResource Accent}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <!-- Llegará con la terminal integrada: hoy Warp no deja elegir la pestaña de la sesión -->
+                    <MenuItem Header="Ir a la terminal (próximamente)" IsEnabled="False">
+                        <MenuItem.Icon>
+                            <TextBlock Classes="icon" Text="&#xE756;" FontSize="14" Foreground="{DynamicResource FgFaint}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </Button.ContextMenu>
+            <Border Classes="miniRow" Classes.review="{Binding NeedsReview}" Classes.overdue="{Binding ReviewOverdue}"
+                    CornerRadius="{DynamicResource RadiusS}" Padding="8,0" Height="28" Margin="0,1">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource Droplet}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <!-- Nombre y, detrás, el escudo de secreto sin ver, como en la tarjeta -->
+                    <DockPanel Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Button DockPanel.Dock="Right" Theme="{StaticResource PlainButton}" Command="{x:Static local:SessionActions.Shield}"
+                                VerticalAlignment="Center" Margin="6,1,0,0" IsVisible="{Binding SecretAlertVisible}" ToolTip.Tip="{Binding SecretAlertTip}">
+                            <local:ShieldIcon />
+                        </Button>
+                        <Border DockPanel.Dock="Right" Background="Transparent" VerticalAlignment="Center" Margin="6,1,0,0"
+                                IsVisible="{Binding HookErrorVisible}" ToolTip.Tip="{Binding HookErrorTip}">
+                            <local:HookIcon />
+                        </Border>
+                        <TextBlock TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                            <Run Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource FgTitle}" /><Run
+                                 Text="{Binding WorktreeSeparator}" Foreground="{DynamicResource FgFaint}" /><Run
+                                 Text="{Binding Worktree}" Foreground="{DynamicResource FgLabel}" />
+                        </TextBlock>
+                    </DockPanel>
+                    <!-- Sin revisar: la misma etiqueta que en la tarjeta, para saber qué fila hay que pulsar -->
+                    <Border Classes="reviewPill" Grid.Column="2" CornerRadius="7" Padding="8,0,8,1" Margin="8,0,0,0"
+                            VerticalAlignment="Center" Background="{Binding StatusTint}" IsVisible="{Binding ReviewVisible}">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Classes="reviewDot" Width="5" Height="5" Fill="{DynamicResource Danger}" VerticalAlignment="Center" Margin="0,1,4,0" />
+                            <TextBlock Classes="reviewText ownColor" Text="Sin revisar" FontSize="10" FontWeight="SemiBold" Foreground="{Binding Brush}" />
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Grid.Column="3" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <Run Text="{Binding Status}" Foreground="{Binding Brush}" FontWeight="SemiBold" /><Run
+                             Text=" · " Foreground="{DynamicResource FgFaint}" /><Run
+                             Text="{Binding Since}" Foreground="{DynamicResource FgFaint}" />
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Button>
+    </DataTemplate>
+
+    <!-- Tarjeta de sesión: anillo de contexto, estado, modelo, esfuerzo, recap y avisos -->
+    <DataTemplate x:Key="SessionCard" x:DataType="local:SessionRow">
+        <Grid Classes="sessionCard" Classes.overdue="{Binding ReviewOverdue}" Margin="0,0,0,8">
+            <Button Theme="{StaticResource PlainButton}" Command="{x:Static local:SessionActions.Card}" CommandParameter="{Binding}">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Classes="caption" Header="{Binding Title}" />
+                        <MenuItem Header="Ver sesión" Command="{x:Static local:SessionActions.ViewSession}" CommandParameter="{Binding}">
+                            <MenuItem.Icon>
+                                <TextBlock Classes="icon" Text="&#xE890;" FontSize="14" Foreground="{DynamicResource Accent}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <!-- Llegará con la terminal integrada: hoy Warp no deja elegir la pestaña de la sesión -->
+                        <MenuItem Header="Ir a la terminal (próximamente)" IsEnabled="False">
+                            <MenuItem.Icon>
+                                <TextBlock Classes="icon" Text="&#xE756;" FontSize="14" Foreground="{DynamicResource FgFaint}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Button.ContextMenu>
+                <Border Classes="lens card" Classes.accent="{Binding HasAccentBorder}" Classes.tinted="{Binding HasCardBackground}"
+                        Padding="12,12" Margin="0">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <!-- Anillo de contexto, con el porcentaje dentro -->
+                        <Grid Width="46" Height="46" Margin="0,0,16,0" VerticalAlignment="Center"
+                              IsVisible="{Binding ContextVisible}" ToolTip.Tip="{Binding ContextTip}">
+                            <Ellipse Fill="{DynamicResource RingInner}" Margin="4" />
+                            <local:RingProgress Value="{Binding ContextPct, TargetNullValue=0}" Stroke="{Binding ContextBrush}"
+                                                Track="{DynamicResource RingTrack}" Thickness="3.5" />
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold">
+                                <Run Text="{Binding ContextText}" /><Run Text="%" FontSize="8" Foreground="{DynamicResource FgMuted}" />
+                            </TextBlock>
+                        </Grid>
+
+                        <Grid Grid.Column="1" VerticalAlignment="Center" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <!-- Título, con un escudo rojo detrás si en la sesión se ha enviado un secreto sin ver; en un worktree,
+                                 el repositorio y su carpeta en gris. El escudo va pegado al texto y, si no cabe, el texto se corta. -->
+                            <DockPanel HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Button DockPanel.Dock="Right" Theme="{StaticResource PlainButton}" Command="{x:Static local:SessionActions.Shield}"
+                                        VerticalAlignment="Center" Margin="8,1,0,0" IsVisible="{Binding SecretAlertVisible}" ToolTip.Tip="{Binding SecretAlertTip}">
+                                    <local:ShieldIcon />
+                                </Button>
+                                <Border DockPanel.Dock="Right" Background="Transparent" VerticalAlignment="Center" Margin="8,1,0,0"
+                                        IsVisible="{Binding HookErrorVisible}" ToolTip.Tip="{Binding HookErrorTip}">
+                                    <local:HookIcon />
+                                </Border>
+                                <TextBlock FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                                    <Run Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource FgTitle}" /><Run
+                                         Text="{Binding WorktreeSeparator}" Foreground="{DynamicResource FgFaint}" /><Run
+                                         Text="{Binding Worktree}" Foreground="{DynamicResource FgLabel}" />
+                                </TextBlock>
+                            </DockPanel>
+
+                            <!-- Pastilla de estado: gota, estado y tiempo en ese estado -->
+                            <Border Grid.Column="1" CornerRadius="10" Padding="8,2,8,3" Background="{Binding StatusTint}" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource Droplet}" Margin="0,1,3,0" VerticalAlignment="Center" />
+                                    <TextBlock Classes="ownColor" Text="{Binding Status}" Foreground="{Binding Brush}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text=" · " Foreground="{Binding Brush}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
+                                    <TextBlock Classes="since" Classes.waited="{Binding Waited}" Text="{Binding Since}" FontWeight="{Binding SinceWeight}"
+                                               FontSize="11" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Sus tareas, con la principal resaltada y su título debajo: cada una lleva a ella en el Tablero. Aquí solo
+                                 se ven; se añaden y quitan en el Tablero y en Sesiones. Y el nombre de la sesión, si lo tiene -->
+                            <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                                <WrapPanel Margin="0,4,0,0" IsVisible="{Binding TaskLineVisible}">
+                                    <TextBlock Classes="icon" Text="&#xE762;" FontSize="10" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,1,6,2" />
+                                    <ItemsControl ItemsSource="{Binding TaskChips}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:SessionTaskChip">
+                                                <Button Theme="{StaticResource PlainButton}" Command="{x:Static local:SessionActions.TaskChip}" CommandParameter="{Binding}"
+                                                        HorizontalAlignment="Left" ToolTip.Tip="{Binding Tip}">
+                                                    <Border Classes="taskChip" Classes.principal="{Binding IsPrincipal}" CornerRadius="9" Padding="7,1,7,2" Margin="0,0,4,2"
+                                                            BorderThickness="1" Background="{DynamicResource TrackFill}" BorderBrush="{DynamicResource TrackEdge}">
+                                                        <TextBlock Text="{Binding Key}" FontFamily="{StaticResource MonoFont}" FontSize="11" VerticalAlignment="Center" />
+                                                    </Border>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding TaskTitle}" IsVisible="{Binding TaskTitleVisible}" ToolTip.Tip="{Binding TaskTitle}"
+                                           Foreground="{DynamicResource Fg}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                <TextBlock Text="{Binding Subtitle}" IsVisible="{Binding SubtitleVisible}"
+                                           Foreground="{DynamicResource FgMuted}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Esfuerzo: cinco barras crecientes, como la cobertura de un móvil -->
+                            <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="{Binding Model}" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Bottom" />
+                                <StackPanel Orientation="Horizontal" IsVisible="{Binding EffortVisible}" ToolTip.Tip="Esfuerzo de la sesión">
+                                    <TextBlock Text="·" Foreground="{DynamicResource FgFaint}" FontSize="11" VerticalAlignment="Bottom" Margin="8,0,8,0" />
+                                    <ItemsControl ItemsSource="{Binding EffortBars}" VerticalAlignment="Bottom" Margin="0,0,4,1">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:EffortBar">
+                                                <Border Width="3" Height="{Binding Height}" Margin="1,0" CornerRadius="1.5" Background="{Binding Brush}" VerticalAlignment="Bottom" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding EffortText}" Foreground="{DynamicResource FgMuted}" FontSize="11" VerticalAlignment="Bottom" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Sin revisar: discreto al terminar, rojo relleno si pasa el rato. El estado sigue siendo Terminado. -->
+                            <Border Classes="reviewPill" Grid.Row="2" Grid.Column="1" CornerRadius="8" Padding="8,1,8,2" Margin="0,8,0,0"
+                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" IsVisible="{Binding ReviewVisible}" Background="{Binding StatusTint}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Classes="reviewDot" Width="6" Height="6" VerticalAlignment="Center" Margin="0,1,4,0" Fill="{DynamicResource Danger}" />
+                                    <TextBlock Classes="caption reviewText ownColor" Text="Sin revisar" FontWeight="SemiBold" Foreground="{Binding Brush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Recap: lo último que dijo Claude, como cita de dos líneas; completo al pasar el ratón -->
+                            <Border Grid.Row="4" Grid.ColumnSpan="2" Margin="0,8,0,0" Padding="8,0,0,0"
+                                    BorderBrush="{DynamicResource TrackEdge}" BorderThickness="2,0,0,0" IsVisible="{Binding RecapVisible}">
+                                <ToolTip.Tip>
+                                    <StackPanel MaxWidth="340">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Classes="icon" Text="&#xE8BD;" FontSize="11" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding RecapAgo}" Foreground="{DynamicResource FgFaint}" Classes="caption ownColor" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Recap}" TextWrapping="Wrap" LineHeight="18" Foreground="{DynamicResource Fg}" FontSize="12" />
+                                    </StackPanel>
+                                </ToolTip.Tip>
+                                <TextBlock Text="{Binding Recap}" Foreground="{DynamicResource FgMuted}" Classes="label"
+                                           FontStyle="Italic" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="2" LineHeight="16" />
+                            </Border>
+
+                            <StackPanel Grid.Row="3" Grid.ColumnSpan="2">
+                                <TextBlock Text="{Binding Detail}" IsVisible="{Binding DetailVisible}"
+                                           Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0" />
+                                <!-- Los agentes que espera: cuánto lleva cada uno, y tachados los que ya acabaron -->
+                                <Border IsVisible="{Binding AgentLinesVisible}" BorderBrush="{DynamicResource TrackEdge}" BorderThickness="0,1,0,0"
+                                        Margin="0,8,0,0" Padding="0,6,0,0">
+                                    <ItemsControl ItemsSource="{Binding AgentLines}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:AgentLine">
+                                                <Grid ColumnDefinitions="14,*,Auto" Margin="0,1">
+                                                    <Ellipse Width="7" Height="7" Fill="{Binding DotBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Description}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource FgMuted}" Classes.gone="{Binding Finished}" ToolTip.Tip="{Binding Description}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Time}" FontSize="11" Foreground="{DynamicResource FgFaint}"
+                                                               Margin="8,0,0,0" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                                <!-- Lo que dejó en marcha: el estado sigue siendo el suyo, solo se avisa -->
+                                <Border IsVisible="{Binding CommandVisible}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="7,1,8,2"
+                                        CornerRadius="7" BorderThickness="1" BorderBrush="{DynamicResource TrackEdge}" ToolTip.Tip="{Binding CommandTip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="6" Height="6" Fill="{Binding CommandDot}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                        <TextBlock Text="{Binding CommandText}" FontSize="11" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Button>
+            <!-- Borde de rayas de la que espera a sus agentes, encima del de la tarjeta -->
+            <Rectangle IsVisible="{Binding Agents}" RadiusX="12" RadiusY="12" Stroke="{Binding AgentsEdge}" StrokeThickness="1.5"
+                       StrokeDashArray="4,3" IsHitTestVisible="False" />
+            <!-- Borde y fondo rojos que laten despacio cuando lleva rato terminada sin revisar -->
+            <Border Classes="glowFill" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource Danger}" Opacity="0" IsHitTestVisible="False" />
+            <Border Classes="glow" CornerRadius="{DynamicResource RadiusM}" BorderThickness="2" BorderBrush="{DynamicResource Danger}" Opacity="0" IsHitTestVisible="False" />
+        </Grid>
+    </DataTemplate>
+    <!-- Una categoría con plazo: nombre, detalle y sus plazos con chips; la usan Datos y retención y Claude Code -->
+    <DataTemplate x:Key="RetentionRow" x:DataType="local:RetentionCategory">
+        <Grid Margin="0,8" ColumnDefinitions="230,*" IsEnabled="{Binding Enabled}">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource FgFaint}" FontSize="11" />
+            </StackPanel>
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Options}" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:RetentionOption">
+                        <RadioButton Theme="{StaticResource ChipRadio}" GroupName="{Binding Group}" Margin="0,2,8,2"
+                                     IsChecked="{Binding IsSelected}" Content="{Binding Label}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>

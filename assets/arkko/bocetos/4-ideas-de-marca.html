@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arkko, marca</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Geist+Mono:wght@500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f4f5; --fg:#1d1d21; --muted:#6b6b74; --card:#fff; --line:#e3e3e7; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 Inter, system-ui, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  h2 { font-size:20px; margin:40px 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 8px; max-width:800px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:14px; margin-top:12px; }
+  .concept { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .concept header { padding:12px 16px; border-bottom:1px solid var(--line); flex:1; }
+  .concept header b { font-size:15px; }
+  .concept header span { color:var(--muted); font-size:13px; display:block; }
+  .concept header q { display:block; margin-top:8px; font:600 14px Geist, sans-serif; letter-spacing:-.01em; quotes:none; }
+  .row { display:flex; align-items:flex-end; gap:16px; padding:16px; }
+  .row.dark { background:#161618; color:#888; }
+  .row.light { background:#f6f6f6; color:#666; }
+  .cell { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; }
+  svg { display:block; }
+  .hero { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:14px; margin-top:12px; }
+  .banner { border-radius:16px; padding:34px 30px; display:flex; flex-direction:column; gap:18px; min-height:220px; justify-content:center; }
+  .banner.dark { background:#0B0B0C; color:#E6E3DC; }
+  .banner.light { background:#E4E1DA; color:#0B0B0C; }
+  .banner .brand { display:flex; align-items:center; gap:12px; font:700 28px Geist, sans-serif; letter-spacing:-.03em; }
+  .banner .claim { font:600 30px/1.15 Geist, sans-serif; letter-spacing:-.03em; max-width:440px; }
+  .banner .claim em { font-style:normal; color:#3FB950; }
+  .banner .sub { font:400 14px Geist, sans-serif; opacity:.6; max-width:420px; }
+  .pill { display:inline-flex; align-self:flex-start; align-items:center; gap:8px; font:500 13px 'Geist Mono', monospace; padding:8px 14px; border-radius:8px; background:#3FB950; color:#0B0B0C; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="3" result="fine"/>
+      <feColorMatrix in="fine" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.6 1.2" result="raw"/>
+      <feColorMatrix in="raw" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .14 0" result="pores"/>
+      <feComposite in="pores" in2="SourceGraphic" operator="in" result="pores-in"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pores-in"/></feMerge>
+    </filter>
+    <filter id="halo" x="-10%" y="-10%" width="120%" height="120%"><feMorphology operator="dilate" radius="3.5"/></filter>
+  </defs>
+</svg>
+<main>
+  <h1>Arkko: ideas de marca</h1>
+  <p class="lead">Seis ideas de icono, cada una con el concepto de marca que hay detrás y su eslogan. Misma AK (Cuchilla), mismo verde, sin depender de la obra.</p>
+
+  <h2>Iconos con concepto</h2>
+  <div class="grid" id="grid"></div>
+
+  <h2>Así se vería en la cabecera de la web o del README</h2>
+  <div class="hero" id="hero"></div>
+</main>
+
+<script>
+const GREEN = '#3FB950';
+const themes = {
+  dark:  { tile: '#0B0B0C', ink: '#BDB9B1', line: '#3A3936', faint: '#55524D', key: '#1A1A1C', keyTop: '#232326' },
+  light: { tile: '#B3AFA7', ink: '#0B0B0C', line: '#8E8A82', faint: '#6E6A63', key: '#9F9B93', keyTop: '#C2BEB6' }
+};
+
+function stroke(x1, y1, x2, y2, ws, wm, we, bend = 0) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  const nx = -dy / len, ny = dx / len;
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const side = s => {
+    const A = [x1 + nx * ws / 2 * s, y1 + ny * ws / 2 * s];
+    const M = [mx + nx * wm / 2 * s, my + ny * wm / 2 * s];
+    const B = [x2 + nx * we / 2 * s, y2 + ny * we / 2 * s];
+    return { A, B, C: [2 * M[0] - (A[0] + B[0]) / 2, 2 * M[1] - (A[1] + B[1]) / 2] };
+  };
+  const a = side(1), b = side(-1), f = n => n.toFixed(1);
+  return `M${f(a.A[0])} ${f(a.A[1])} Q${f(a.C[0])} ${f(a.C[1])} ${f(a.B[0])} ${f(a.B[1])} L${f(b.B[0])} ${f(b.B[1])} Q${f(b.C[0])} ${f(b.C[1])} ${f(b.A[0])} ${f(b.A[1])} Z`;
+}
+
+// La Cuchilla: el cuerpo (tres trazos) y el brazo, por separado
+const body = ink => `
+  <path d="${stroke(60, 30, 28, 98, 14, 10, 1)}" fill="${ink}"/>
+  <path d="${stroke(60, 30, 60, 98, 14, 11, 2)}" fill="${ink}"/>
+  <path d="${stroke(62, 68, 98, 98, 12, 8, 1)}" fill="${ink}"/>`;
+const arm = c => `<path d="${stroke(62, 68, 98, 32, 12, 8, 1)}" fill="${c}"/>`;
+const ak = (ink, ac) => body(ink) + arm(ac);
+const at = (tf, s) => `<g transform="${tf}">${s}</g>`;
+const tile = t => `<rect x="6" y="6" width="116" height="116" rx="28" fill="${t.tile}" filter="url(#grain)"/>`;
+
+const designs = [
+  { key: 'estela', name: 'Tú delante, los agentes detrás',
+    note: 'El brazo de la K se convierte en una fila de puntos que crecen hacia la punta: el verde, delante, eres tú; los grises, los agentes que te siguen.',
+    claim: 'Where agents build, and you lead.',
+    draw: t => tile(t) + body(t.ink) + [[66, 64, 4.5, t.faint], [74, 56, 5.5, t.faint], [83, 46.5, 6.5, t.ink], [94, 35, 8.5, GREEN]]
+      .map(([x, y, r, c]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join('') },
+  { key: 'tecla', name: 'La tecla',
+    note: 'La AK grabada en una tecla, con su piloto verde encendido. La herramienta que tocas cada día; personal, táctil, de escritorio.',
+    claim: 'Build with agents. Ship with structure.',
+    draw: t => `<rect x="6" y="6" width="116" height="116" rx="28" fill="${t.key}" filter="url(#grain)"/>
+      <rect x="16" y="12" width="96" height="94" rx="20" fill="${t.keyTop}" filter="url(#grain)"/>
+      ${at('translate(58 58) scale(.62) translate(-63 -64)', ak(t.ink, t.ink))}
+      <rect x="86" y="22" width="14" height="5" rx="2.5" fill="${GREEN}"/>` },
+  { key: 'pila', name: 'Sesiones en paralelo',
+    note: 'Dos ventanas detrás de la principal, apenas insinuadas: varias sesiones a la vez, todas en un mismo sitio.',
+    claim: 'One place. All your agents. Every step.',
+    draw: t => `<rect x="30" y="6" width="92" height="92" rx="22" fill="none" stroke="${t.line}" stroke-width="3"/>
+      <rect x="18" y="18" width="92" height="92" rx="22" fill="none" stroke="${t.faint}" stroke-width="3"/>
+      <rect x="6" y="30" width="92" height="92" rx="22" fill="${t.tile}" filter="url(#grain)"/>
+      ${at('translate(52 76) scale(.66) translate(-63 -64)', ak(t.ink, GREEN))}` },
+  { key: 'foco', name: 'En foco',
+    note: 'Cuatro esquinas en verde, como el encuadre de una cámara o una selección: lo que tienes delante, bajo control.',
+    claim: 'Stay in the loop. Stay in control.',
+    draw: t => tile(t) + at('translate(64 64) scale(.7) translate(-63 -64)', ak(t.ink, t.ink)) +
+      `<path d="M24 38 V24 H38 M90 24 H104 V38 M104 90 V104 H90 M38 104 H24 V90" fill="none" stroke="${GREEN}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>` },
+  { key: 'senal', name: 'La señal',
+    note: 'De la punta del brazo salen dos ondas: un agente que te avisa. Lo que mejor hace la app, contado en el logo.',
+    claim: 'Agents do the work. You make the calls.',
+    draw: t => tile(t) + at('translate(-6 6)', ak(t.ink, GREEN)) +
+      `<path d="M98 26 A12 12 0 0 1 106 40 M102 16 A24 24 0 0 1 116 42" fill="none" stroke="${GREEN}" stroke-width="4" stroke-linecap="round"/>` },
+  { key: 'orbita', name: 'Orquesta',
+    note: 'Una órbita fina alrededor de la AK con un punto verde que la recorre: tú en el centro, los agentes girando a tu alrededor.',
+    claim: 'Less babysitting. More building.',
+    draw: t => tile(t) + `<ellipse cx="64" cy="64" rx="50" ry="22" transform="rotate(-28 64 64)" fill="none" stroke="${t.line}" stroke-width="2.5"/>`
+      + `<g filter="url(#halo)">${at('translate(64 64) scale(.78) translate(-63 -64)', ak(t.tile, t.tile))}</g>`
+      + at('translate(64 64) scale(.78) translate(-63 -64)', ak(t.ink, t.ink))
+      + `<circle cx="104" cy="38" r="7" fill="${GREEN}"/>` }
+];
+
+const icon = (d, th, s) => `<svg width="${s}" height="${s}" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">${d.draw(themes[th])}</svg>`;
+const sizes = [16, 20, 32, 64, 128];
+const row = (d, th) => `<div class="row ${th}">${sizes.map(s => `<div class="cell">${icon(d, th, s)}<span>${s}</span></div>`).join('')}</div>`;
+document.getElementById('grid').innerHTML = designs.map(d =>
+  `<section class="concept"><header><b>${d.name}</b><span>${d.note}</span><q>“${d.claim}”</q></header>${row(d, 'dark')}${row(d, 'light')}</section>`).join('');
+
+const by = k => designs.find(d => d.key === k);
+const heroes = [
+  ['estela', 'dark', 'Where agents build,<br>and you <em>lead</em>.', 'Plan, run and review every agent session from one desktop app.', '$ ak new feature'],
+  ['tecla', 'light', 'Build with agents.<br>Ship with <em>structure</em>.', 'Spec-driven workflows, a base stack of agents and skills, and a record of everything they did.', '$ ak review'],
+  ['foco', 'dark', 'Less babysitting.<br>More <em>building</em>.', 'Know when an agent needs you, what it cost and what it changed.', '$ ak status'],
+  ['senal', 'light', 'Agents do the work.<br>You make the <em>calls</em>.', 'Boards, worktrees, reviews and a terminal, in one place.', '$ ak ship']
+];
+document.getElementById('hero').innerHTML = heroes.map(([k, th, claim, sub, cmd]) =>
+  `<div class="banner ${th}"><div class="brand">${icon(by(k), th, 40)}Arkko</div><div class="claim">${claim}</div><div class="sub">${sub}</div><span class="pill">${cmd}</span></div>`).join('');
+</script>
+</body>
+</html>

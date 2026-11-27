@@ -1,0 +1,420 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:Arkko.Desktop"
+             x:Class="Arkko.Desktop.ArtifactsView"
+             x:DataType="local:ArtifactsModel">
+    <!-- COLORES DEL DOSSIER: grises de tecla y un solo acento, el verde; aquí manda sobre el acento general de la app.
+         Las clases llevan su color de dato, que no es un acento -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="Accent" Color="#3FB950" />
+        <SolidColorBrush x:Key="ChipOn" Color="#2E3FB950" />
+        <SolidColorBrush x:Key="ChipOnEdge" Color="#993FB950" />
+        <SolidColorBrush x:Key="ArtGreen" Color="#3FB950" />
+        <SolidColorBrush x:Key="ArtGreenTint" Color="#1F3FB950" />
+        <!-- Lo recalcula la vista con el ancho, para que las tarjetas llenen cada fila -->
+        <x:Double x:Key="ArtCardWidth">280</x:Double>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- El aro de carga solo gira mientras se ve: una animación sin fin mantendría la ventana repintándose para nada -->
+        <Style Selector="Grid.spinning">
+            <Style.Animations>
+                <Animation Duration="0:0:0.8" IterationCount="INFINITE">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- PANELES: la lista compacta y lo abierto, dos tarjetas que llenan el alto -->
+        <Style Selector="Border.pane">
+            <Setter Property="Background" Value="{DynamicResource TaskCardFill}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardEdge}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusM}" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+
+        <!-- TARJETA DE LA GALERÍA: densa, con la raya y la baldosa del color de su clase -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource TaskCardFill}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TaskCardEdge}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Padding" Value="13,10,11,10" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.card:pointerover">
+            <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource LensEdge}" />
+        </Style>
+
+        <!-- FILA DE LA LISTA COMPACTA: al pasar, un fondo suave; la abierta, el verde tenue con su raya -->
+        <Style Selector="Border.row">
+            <Setter Property="Padding" Value="10,7,10,7" />
+            <Setter Property="Margin" Value="6,1" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource TrackFill}" />
+        </Style>
+        <Style Selector="Border.row.on">
+            <Setter Property="Background" Value="{StaticResource ArtGreenTint}" />
+        </Style>
+        <Style Selector="Border.row Border.rail">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.row.on Border.rail">
+            <Setter Property="Background" Value="{StaticResource ArtGreen}" />
+        </Style>
+
+        <!-- CABECERA DE UN REPOSITORIO: alto fijo; las flechas para moverlo aparecen fundiéndose, sin mover nada -->
+        <Style Selector="Grid.groupHead StackPanel.order">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Grid.groupHead:pointerover StackPanel.order">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Grid.groupHead:pointerover TextBlock.groupName">
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+        </Style>
+
+        <!-- Botón pequeño y plano de la cabecera de un repositorio -->
+        <Style Selector="Button.flat">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- BARRA: la búsqueda, las clases y de dónde se viene; a la derecha, cuántos hay y las galerías de los agentes -->
+        <DockPanel Margin="0,0,10,12">
+            <Button DockPanel.Dock="Right" Theme="{StaticResource ChipButton}" Click="Galleries_Click" VerticalAlignment="Center" Margin="12,0,0,0"
+                    ToolTip.ShowDelay="300">
+                <ToolTip.Tip>
+                    <StackPanel MaxWidth="320">
+                        <TextBlock Text="Las galerías de tus agentes" FontWeight="SemiBold" />
+                        <TextBlock Text="Ahí está todo lo que han publicado, también lo hecho en su chat. Desde aquí también se trae su lista a Arkko."
+                                   Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                    </StackPanel>
+                </ToolTip.Tip>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Galerías" />
+                    <TextBlock Text="&#xE70D;" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="8,1,0,0" />
+                </StackPanel>
+            </Button>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding Summary}" Foreground="{DynamicResource FgFaint}" FontSize="11.5" VerticalAlignment="Center"
+                       Margin="12,0,0,0" />
+            <WrapPanel VerticalAlignment="Center">
+                <Border Width="250" CornerRadius="{DynamicResource RadiusM}" Background="{DynamicResource ButtonFill}" BorderBrush="{DynamicResource LensEdge}"
+                        BorderThickness="1" Padding="10,0" VerticalAlignment="Center" Margin="0,2,10,2">
+                    <Panel>
+                        <TextBlock Text="&#xE721;" Classes="icon" FontSize="11" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                   IsHitTestVisible="False" />
+                        <TextBox Margin="18,0,0,0" Padding="0,4" MinHeight="0" BorderThickness="0" Background="Transparent" FontSize="12"
+                                 VerticalContentAlignment="Center" PlaceholderText="Buscar por título, carpeta o sesión" Text="{Binding Query, Delay=200}" />
+                    </Panel>
+                </Border>
+                <ItemsControl ItemsSource="{Binding Kinds}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:ArtifactKindChoice">
+                            <RadioButton Theme="{StaticResource ChipRadio}" GroupName="ArtifactKind" IsChecked="{Binding IsOn}" Margin="0,2,6,2">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Icon}" Classes="icon ownColor" Foreground="{Binding Brush}" FontSize="10.5"
+                                               IsVisible="{Binding IconVisible}" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                    <local:ClaudeLogo Width="10" Height="10" IsVisible="{Binding SparkVisible}" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                    <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding CountText}" FontFamily="{StaticResource MonoFont}" FontSize="10.5" Opacity="0.55"
+                                               VerticalAlignment="Center" Margin="7,1,0,0" />
+                                </StackPanel>
+                            </RadioButton>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Theme="{StaticResource ChipButton}" Click="Scope_Click" IsVisible="{Binding ScopeVisible}" Margin="4,2,0,2"
+                        ToolTip.Tip="Volver a verlo todo">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding ScopeText}" />
+                        <TextBlock Text="&#xE711;" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="8,1,0,0" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
+        </DockPanel>
+
+        <!-- CARGA: hasta la primera lectura de los transcripts -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding LoadingVisible}">
+            <Grid Classes.spinning="{Binding LoadingVisible}" Width="34" Height="34" HorizontalAlignment="Center">
+                <Ellipse Stroke="{DynamicResource TrackEdge}" StrokeThickness="3" />
+                <Path Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeLineCap="Round" Data="M 17,1.5 A 15.5,15.5 0 0 1 32.5,17" />
+            </Grid>
+            <TextBlock Text="Leyendo los transcripts…" Margin="0,14,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource FgMuted}" />
+        </StackPanel>
+
+        <!-- VACÍA: qué saldrá aquí, o que los filtros lo dejan fuera -->
+        <StackPanel Grid.Row="1" IsVisible="{Binding EmptyVisible}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="380">
+            <Border Width="52" Height="52" CornerRadius="14" Background="{DynamicResource TrackFill}" HorizontalAlignment="Center">
+                <TextBlock Text="&#xE7C3;" Classes="icon" FontSize="22" Foreground="{DynamicResource FgMuted}" HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Text="{Binding EmptyTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" HorizontalAlignment="Center"
+                       Margin="0,16,0,6" />
+            <TextBlock Text="{Binding EmptyText}" FontSize="12" Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap" TextAlignment="Center" />
+            <Button Theme="{StaticResource ChipButton}" Click="Galleries_Click" HorizontalAlignment="Center" Margin="0,16,0,0" IsVisible="{Binding !Filtered}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Abrir las galerías" />
+                    <TextBlock Text="&#xE70D;" Classes="icon" FontSize="9" VerticalAlignment="Center" Margin="8,1,0,0" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- GALERÍA: la entrada de la sección, con lo publicado por repositorio en tarjetas; al abrir una, se pasa a la lista y lo abierto.
+             Se esconde sin quitarse, para volver donde se dejó -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding GalleryVisible}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Name="GalleryBody" Margin="0,0,14,12" SizeChanged="GalleryBody_SizeChanged">
+                <ItemsControl ItemsSource="{Binding Groups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:ArtifactGroup">
+                            <StackPanel Margin="0,0,0,10">
+                                <!-- Pulsada, la cabecera pliega o despliega el repositorio; al pasar, salen las flechas para moverlo -->
+                                <Grid Classes="groupHead" Height="32" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Background="Transparent" Cursor="Hand"
+                                      PointerReleased="Group_Released" Margin="0,0,8,4">
+                                    <TextBlock Text="{Binding Chevron}" Classes="icon" FontSize="8" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                               Width="12" Margin="0,1,6,0" />
+                                    <Border Grid.Column="1" Width="3" Height="14" CornerRadius="2" Background="{Binding Brush}" VerticalAlignment="Center"
+                                            Margin="0,0,9,0" />
+                                    <TextBlock Grid.Column="2" Classes="groupName" Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3" Text="{Binding CountText}" FontFamily="{StaticResource MonoFont}" FontSize="10.5"
+                                               Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="9,1,0,0" />
+                                    <Border Grid.Column="4" Height="1" Background="{DynamicResource TaskCardEdge}" VerticalAlignment="Center" Margin="12,1,6,0" />
+                                    <StackPanel Grid.Column="5" Classes="order" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                        <Button Classes="flat" Click="Up_Click" IsEnabled="{Binding CanUp}" ToolTip.Tip="Subir">
+                                            <TextBlock Text="&#xE70E;" Classes="icon" FontSize="8" Foreground="{DynamicResource FgMuted}" />
+                                        </Button>
+                                        <Button Classes="flat" Click="Down_Click" IsEnabled="{Binding CanDown}" ToolTip.Tip="Bajar">
+                                            <TextBlock Text="&#xE70D;" Classes="icon" FontSize="8" Foreground="{DynamicResource FgMuted}" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding Open}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:ArtifactRow">
+                                            <Border Classes="card" Width="{DynamicResource ArtCardWidth}" Margin="0,0,8,8" PointerReleased="Row_Released"
+                                                    ContextRequested="Row_ContextRequested" ToolTip.Tip="{Binding Tip}" ToolTip.ShowDelay="800">
+                                                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                                                    <!-- La raya del color de su clase, pegada al borde izquierdo -->
+                                                    <Border Width="3" Background="{Binding KindBrush}" Margin="-13,-10,10,-10" />
+                                                    <Border Grid.Column="1" Width="32" Height="32" CornerRadius="8" Background="{Binding KindFill}" VerticalAlignment="Center"
+                                                            Margin="0,0,11,0">
+                                                        <Panel>
+                                                            <TextBlock Text="{Binding Icon}" Classes="icon ownColor" FontSize="14" Foreground="{Binding KindBrush}"
+                                                                       IsVisible="{Binding HasIcon}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            <local:ClaudeLogo Width="14" Height="14" IsVisible="{Binding IsUnknown}" HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Center" />
+                                                        </Panel>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" ClipToBounds="True">
+                                                        <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                                                            <TextBlock Text="{Binding KindText}" Classes="ownColor" Foreground="{Binding KindBrush}" FontSize="10.5"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding Folder}" IsVisible="{Binding FolderVisible}" FontFamily="{StaticResource MonoFont}"
+                                                                       FontSize="10.5" Foreground="{DynamicResource FgMuted}" />
+                                                            <TextBlock Text="{Binding WhenText}" FontSize="10.5" Foreground="{DynamicResource FgFaint}" />
+                                                            <TextBlock Text="{Binding VersionText}" IsVisible="{Binding VersionVisible}" FontFamily="{StaticResource MonoFont}"
+                                                                       FontSize="10.5" Foreground="{DynamicResource FgFaint}" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <!-- Lo publicado o actualizado en el último día -->
+                                                    <Ellipse Grid.Column="3" Width="6" Height="6" Fill="{StaticResource ArtGreen}" IsVisible="{Binding IsNew}"
+                                                             VerticalAlignment="Top" Margin="8,3,0,0" ToolTip.Tip="Nuevo: publicado o actualizado en el último día" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- QUITADOS: lo quitado de la lista y lo borrado de claude.ai, plegado; lo quitado se puede devolver -->
+                <ToggleButton Theme="{StaticResource ChipToggle}" IsChecked="{Binding ShowRemoved}" Content="{Binding RemovedText}"
+                              IsVisible="{Binding RemovedVisible}" HorizontalAlignment="Left" Margin="0,4,0,6"
+                              ToolTip.Tip="Lo quitado de la lista de Arkko. En claude.ai sigue existiendo, salvo lo que se borró desde una sesión." />
+                <ItemsControl ItemsSource="{Binding RemovedRows}" IsVisible="{Binding RemovedListVisible}" MaxWidth="560" HorizontalAlignment="Left">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="local:ArtifactRow">
+                            <Border Classes="row" Cursor="Arrow" Margin="0,1" ToolTip.Tip="{Binding Tip}" ToolTip.ShowDelay="800">
+                                <Grid ColumnDefinitions="Auto,*,Auto" Opacity="0.7">
+                                    <TextBlock Text="{Binding Icon}" Classes="icon" FontSize="13" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Top"
+                                               Margin="0,2,10,0" />
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding Title}" FontSize="12.5" Foreground="{DynamicResource FgMuted}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding GoneText}" FontSize="10.5" Foreground="{DynamicResource FgFaint}" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Theme="{StaticResource ChipButton}" Click="Restore_Click" Content="Devolver"
+                                            IsVisible="{Binding CanRestore}" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip.Tip="Vuelve a salir en la lista" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- LO ABIERTO: a la izquierda, la lista compacta para saltar de uno a otro; a la derecha, lo abierto en el navegador integrado.
+             En un recuadro estrecho, solo lo abierto (ArtifactsView.Fit) -->
+        <Grid Name="Split" Grid.Row="1" IsVisible="{Binding SplitVisible}" ColumnDefinitions="320,10,*" Margin="0,0,10,0">
+            <Border Name="ListPane" Classes="pane">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Groups}" Margin="0,6,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:ArtifactGroup">
+                                <StackPanel Margin="0,0,0,6">
+                                    <Grid Classes="groupHead" Height="30" Margin="6,0" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Background="Transparent"
+                                          Cursor="Hand" PointerReleased="Group_Released">
+                                        <TextBlock Text="{Binding Chevron}" Classes="icon" FontSize="8" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center"
+                                                   Width="12" Margin="4,1,6,0" />
+                                        <Border Grid.Column="1" Width="3" Height="13" CornerRadius="2" Background="{Binding Brush}" VerticalAlignment="Center"
+                                                Margin="0,0,9,0" />
+                                        <TextBlock Grid.Column="2" Classes="groupName" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource FgMuted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <StackPanel Grid.Column="3" Classes="order" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center" Margin="6,0">
+                                            <Button Classes="flat" Click="Up_Click" IsEnabled="{Binding CanUp}" ToolTip.Tip="Subir">
+                                                <TextBlock Text="&#xE70E;" Classes="icon" FontSize="8" Foreground="{DynamicResource FgMuted}" />
+                                            </Button>
+                                            <Button Classes="flat" Click="Down_Click" IsEnabled="{Binding CanDown}" ToolTip.Tip="Bajar">
+                                                <TextBlock Text="&#xE70D;" Classes="icon" FontSize="8" Foreground="{DynamicResource FgMuted}" />
+                                            </Button>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="4" Text="{Binding CountText}" FontFamily="{StaticResource MonoFont}" FontSize="10.5"
+                                                   Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Rows}" IsVisible="{Binding Open}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:ArtifactRow">
+                                                <Border Classes="row" Classes.on="{Binding IsSelected}" PointerReleased="Row_Released"
+                                                        ContextRequested="Row_ContextRequested" ToolTip.Tip="{Binding Tip}" ToolTip.ShowDelay="800">
+                                                    <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                                                        <!-- La raya verde de lo abierto -->
+                                                        <Border Classes="rail" Width="2" CornerRadius="1" Margin="-6,1,8,1" />
+                                                        <Panel Grid.Column="1" Width="14" VerticalAlignment="Top" Margin="0,2,10,0">
+                                                            <TextBlock Text="{Binding Icon}" Classes="icon ownColor" FontSize="13" Foreground="{Binding KindBrush}"
+                                                                       IsVisible="{Binding HasIcon}" HorizontalAlignment="Center" />
+                                                            <local:ClaudeLogo Width="12" Height="12" IsVisible="{Binding IsUnknown}" HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Top" Margin="0,1,0,0" />
+                                                        </Panel>
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,3,0,0">
+                                                                <TextBlock Text="{Binding Folder}" IsVisible="{Binding FolderVisible}" FontFamily="{StaticResource MonoFont}"
+                                                                           FontSize="10.5" Foreground="{DynamicResource FgMuted}" />
+                                                                <TextBlock Text="{Binding WhenText}" FontSize="10.5" Foreground="{DynamicResource FgFaint}" />
+                                                                <TextBlock Text="{Binding VersionText}" IsVisible="{Binding VersionVisible}" FontFamily="{StaticResource MonoFont}"
+                                                                           FontSize="10.5" Foreground="{DynamicResource FgFaint}" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <!-- Lo publicado o actualizado en el último día -->
+                                                        <Ellipse Grid.Column="3" Width="6" Height="6" Fill="{StaticResource ArtGreen}" IsVisible="{Binding IsNew}"
+                                                                 VerticalAlignment="Top" Margin="8,6,0,0" ToolTip.Tip="Nuevo: publicado o actualizado en el último día" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <GridSplitter Name="Splitter" Grid.Column="1" Background="Transparent" ResizeDirection="Columns" Cursor="SizeWestEast" />
+
+            <Border Name="DetailPane" Grid.Column="2" Classes="pane">
+                <DockPanel>
+                    <!-- CABECERA: lo abierto, dónde está y sus datos; sus acciones y la ✕ para volver a la galería -->
+                    <Border DockPanel.Dock="Top" Padding="16,13,14,12" BorderBrush="{DynamicResource TaskCardEdge}" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="Auto,*,Auto" DataContext="{Binding Selected}" x:DataType="local:ArtifactRow">
+                            <Border Width="38" Height="38" CornerRadius="10" Background="{Binding KindFill}" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <Panel>
+                                    <TextBlock Text="{Binding Icon}" Classes="icon ownColor" FontSize="16" Foreground="{Binding KindBrush}"
+                                               IsVisible="{Binding HasIcon}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <local:ClaudeLogo Width="16" Height="16" IsVisible="{Binding IsUnknown}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Panel>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                    <Border Width="3" Height="11" CornerRadius="2" Background="{Binding HomeBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Place}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource FgMuted}" />
+                                    <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource FgFaint}" />
+                                    <TextBlock Text="{Binding KindText}" Classes="ownColor" Foreground="{Binding KindBrush}" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource FgFaint}" />
+                                    <TextBlock Text="{Binding WhenText}" FontSize="11" Foreground="{DynamicResource FgFaint}" />
+                                    <TextBlock Text="{Binding VersionText}" IsVisible="{Binding VersionVisible}" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                               Foreground="{DynamicResource FgFaint}" />
+                                    <TextBlock Text="·" FontSize="11" Foreground="{DynamicResource FgFaint}" />
+                                    <TextBlock Text="{Binding SessionText}" FontSize="11" Foreground="{DynamicResource FgFaint}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <Button Theme="{StaticResource ChipButton}" Click="Session_Click" IsVisible="{Binding HasSession}" ToolTip.Tip="Verla en Sesiones">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE8F2;" Classes="icon" FontSize="10" VerticalAlignment="Center" Margin="0,1,7,0" />
+                                        <TextBlock Text="Ir a la sesión" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Theme="{StaticResource ChipButton}" Click="DetailMore_Click" ToolTip.Tip="Más opciones">
+                                    <TextBlock Text="&#xE712;" Classes="icon" FontSize="10" Margin="0,2" />
+                                </Button>
+                                <Border Width="1" Height="18" Background="{DynamicResource TaskCardEdge}" Margin="4,0" VerticalAlignment="Center" />
+                                <Button Theme="{StaticResource ChipButton}" Click="Close_Click" ToolTip.Tip="Cerrar y volver a la galería">
+                                    <TextBlock Text="&#xE711;" Classes="icon" FontSize="10" Margin="0,2" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <!-- EL NAVEGADOR INTEGRADO: lo pone el código, para crearlo solo cuando se abre algo -->
+                    <Panel Name="BrowserHost" />
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- AL PIE, SIEMPRE: de dónde sale lo que se ve y de dónde no -->
+        <DockPanel Grid.Row="2" Margin="0,10,10,0">
+            <TextBlock Text="&#xE946;" Classes="icon" FontSize="10" Foreground="{DynamicResource FgFaint}" VerticalAlignment="Center" Margin="0,1,8,0" />
+            <TextBlock FontSize="11" Foreground="{DynamicResource FgFaint}" TextWrapping="Wrap" VerticalAlignment="Center"
+                       Text="Lo publicado desde este equipo (Claude Code y Cowork). Lo hecho en el chat se trae desde «Galerías»." />
+        </DockPanel>
+    </Grid>
+</UserControl>

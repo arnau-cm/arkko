@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <!-- Solo lo propio: ni scripts, ni estilos, ni conexiones de fuera -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directo</title>
+    <link rel="stylesheet" href="reloj.css">
+    <link rel="stylesheet" href="directo.css">
+</head>
+<body>
+    <!-- DIRECTO: los widgets del corcho en directo; la dirección dice cuál se pinta (?w=tetoca) -->
+    <main class="dt-page" id="page"></main>
+    <div class="dt-tip" id="tip" hidden></div>
+    <script src="reloj.js"></script>
+    <script src="directo.js"></script>
+</body>
+</html>

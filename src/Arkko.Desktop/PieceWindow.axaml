@@ -1,0 +1,27 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
+        x:Class="Arkko.Desktop.PieceWindow"
+        Title="Arkko" Icon="{DynamicResource AppWindowIcon}"
+        Width="1000" Height="800" MinWidth="420" MinHeight="300"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="BorderOnly" ExtendClientAreaToDecorationsHint="True" ExtendClientAreaTitleBarHeightHint="44"
+        Background="{DynamicResource GlassBase}">
+    <!-- PIEZA APARTE: una parte de Sesiones en su propia ventana, viva, que se lleva a otra pantalla y se maximiza. La
+         barra es la del panel; debajo, la página de Sesiones en modo pieza -->
+    <DockPanel>
+        <Grid DockPanel.Dock="Top" Height="44" Background="Transparent" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+            <TextBlock Name="Heading" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" Margin="18,0,140,0"
+                       TextTrimming="CharacterEllipsis" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"
+                        chrome:WindowDecorationProperties.ElementRole="User">
+                <Button Name="WidgetMenuButton" Theme="{StaticResource BarButton}" Click="WidgetMenu_Click" Content="&#xE712;" IsVisible="False" />
+                <Button Name="PinButton" Theme="{StaticResource BarButton}" Click="Pin_Click" Content="&#xE718;" />
+                <Button Theme="{StaticResource BarButton}" Click="Minimize_Click" ToolTip.Tip="Minimizar" Content="&#xE921;" />
+                <Button Name="MaximizeButton" Theme="{StaticResource BarButton}" Click="Maximize_Click" ToolTip.Tip="Maximizar" Content="&#xE922;" />
+                <Button Theme="{StaticResource CloseButton}" Click="Close_Click" ToolTip.Tip="Cerrar" Content="&#xE8BB;" />
+            </StackPanel>
+        </Grid>
+        <Grid Name="Host" />
+    </DockPanel>
+</Window>
